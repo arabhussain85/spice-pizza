@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { fetchTableGrid, type TableGridRow } from "@/lib/queries";
 import { Avatar, Logo, Pill } from "@/components/ui";
+import { LogoutButton } from "@/components/LogoutButton";
 import { formatClock } from "@/lib/time";
 import { TableCard } from "./TableCard";
 
@@ -55,6 +56,7 @@ export default function CounterHomePage() {
           {rows && <Pill tone="green">{freeCount} tables free</Pill>}
           <span className="text-sm tabular-nums text-muted">{formatClock(now)}</span>
           <Avatar name="AK" />
+          <LogoutButton className="hidden sm:block" />
         </div>
       </header>
 

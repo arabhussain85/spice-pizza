@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/components/ui";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const tabs = [
   { href: "/admin", label: "Today", icon: "◆" },
@@ -74,6 +75,9 @@ export function AdminNav() {
                   {m.label}
                 </Link>
               ))}
+              <div className="mt-1 border-t border-hairline px-4 pt-3">
+                <LogoutButton />
+              </div>
             </div>
           </div>
         </div>

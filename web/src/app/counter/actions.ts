@@ -1,10 +1,27 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { PaymentMethod, PaymentStatus } from "@/lib/types";
 
-// TODO(Phase 5): replace hardcoded server with the authenticated staff member.
 const DEFAULT_SERVER = "AK";
+
+/** The logged-in staff member (falls back gracefully when auth is off). */
+async function sessionStaff(): Promise<{ id: string | null; name: string }> {
+  try {
+    const supa = await createServerClient();
+    const {
+      data: { user },
+    } = await supa.auth.getUser();
+    if (!user) return { id: null, name: DEFAULT_SERVER };
+    const name = ((user.user_metadata?.name as string) || user.email?.split("@")[0] || DEFAULT_SERVER).trim();
+    const admin = createAdminClient();
+    const { data: staff } = await admin.from("staff").select("id").eq("email", user.email ?? "").maybeSingle();
+    return { id: staff?.id ?? null, name };
+  } catch {
+    return { id: null, name: DEFAULT_SERVER };
+  }
+}
 
 async function serviceChargePct(supa: ReturnType<typeof createAdminClient>): Promise<number> {
   const { data } = await supa.from("settings").select("service_charge_pct").eq("id", 1).maybeSingle();
@@ -51,9 +68,10 @@ export async function startOrder(tableId: string): Promise<{ orderId: string }> 
   if (existing) return { orderId: existing.id };
 
   const pct = await serviceChargePct(supa);
+  const staff = await sessionStaff();
   const { data: order, error } = await supa
     .from("orders")
-    .insert({ table_id: tableId, server_name: DEFAULT_SERVER, service_charge_pct: pct })
+    .insert({ table_id: tableId, server_name: staff.name, server_id: staff.id, service_charge_pct: pct })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -132,9 +150,10 @@ export async function sendToKitchen(orderId: string) {
 
 export async function voidLineItem(lineItemId: string, reason: string) {
   const supa = createAdminClient();
+  const staff = await sessionStaff();
   const { error } = await supa
     .from("order_line_items")
-    .update({ is_voided: true, void_reason: reason, voided_at: new Date().toISOString() })
+    .update({ is_voided: true, void_reason: reason, voided_at: new Date().toISOString(), voided_by: staff.id })
     .eq("id", lineItemId);
   if (error) throw new Error(error.message);
   return { ok: true };
