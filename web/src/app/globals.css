@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/*
+  Spice Pizza brand theme (matches spice-docs mockups):
+  warm off-white background, brand red primary, green = free / red = occupied.
+*/
+@theme {
+  --color-brand: #c0392b;
+  --color-brand-dark: #a5281b;
+  --color-brand-tint: #fbeae7;
+  --color-brand-tint-2: #f6d7d2;
+
+  --color-cream: #faf6f0;
+  --color-surface: #ffffff;
+
+  --color-free: #15a34a;
+  --color-free-dark: #15803d;
+  --color-free-tint: #e7f6ec;
+
+  --color-ink: #1f2430;
+  --color-muted: #6b7280;
+  --color-hairline: #ecece6;
+
+  --radius-card: 1rem;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+/* thin, unobtrusive scrollbars for the counter panels */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d3ca transparent;
+}

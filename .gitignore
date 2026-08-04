@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# env / secrets — NEVER commit
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+supabase-terms.txt
+
+# next
+.next/
+**/.next/
+out/
+**/out/
+build/
+dist/
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
+.vercel
+coverage/
+
+# local converted assets (keep originals in menu-images/)
+menu-images/jpg/
+
+# generated PDFs
+printer-bridge/output/
+*.pdf.tmp
