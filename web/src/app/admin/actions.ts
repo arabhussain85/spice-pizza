@@ -84,11 +84,40 @@ export async function updateSettings(patch: {
 
 export async function confirmPayment(id: string) {
   const supa = createAdminClient();
-  const { error } = await supa
+  // 1. Confirm payment
+  const { data: payment, error } = await supa
     .from("payments")
     .update({ status: "confirmed", confirmed_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .select("order_id")
+    .single();
   if (error) throw new Error(error.message);
+
+  if (payment?.order_id) {
+    // 2. Close order
+    const { data: order } = await supa
+      .from("orders")
+      .update({ status: "closed", closed_at: new Date().toISOString() })
+      .eq("id", payment.order_id)
+      .select("table_id")
+      .single();
+
+    // 3. Free table
+    if (order?.table_id) {
+      await supa.from("restaurant_tables").update({ status: "free", opened_at: null }).eq("id", order.table_id);
+    }
+
+    // 4. Clean empty rounds
+    const { data: emptyRounds } = await supa
+      .from("order_rounds")
+      .select("id,order_line_items(id)")
+      .eq("order_id", payment.order_id);
+    for (const r of (emptyRounds ?? []) as Array<{ id: string; order_line_items: unknown[] }>) {
+      if ((r.order_line_items ?? []).length === 0) {
+        await supa.from("order_rounds").delete().eq("id", r.id);
+      }
+    }
+  }
   return { ok: true };
 }
 

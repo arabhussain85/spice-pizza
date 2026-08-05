@@ -175,8 +175,8 @@ async function addReceiptPage(
 
 export async function renderReceipts(models: ReceiptModel[]): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const font = await doc.embedFont(StandardFonts.Courier);
+  const bold = await doc.embedFont(StandardFonts.CourierBold);
   for (const m of models) await addReceiptPage(doc, font, bold, m);
   return doc.save();
 }

@@ -68,12 +68,27 @@ export async function fetchToday(supa: SupabaseClient): Promise<TodayData> {
   const yS = new Date(todayS);
   yS.setDate(yS.getDate() - 1);
 
-  const [tablesRes, pays, closedToday] = await Promise.all([
-    supa.from("restaurant_tables").select("number,status").order("number"),
+  const [tablesRes, ordersRes, pays, closedToday] = await Promise.all([
+    supa.from("restaurant_tables").select("id,number,status").order("number"),
+    supa.from("orders").select("table_id,order_rounds(order_line_items(quantity,is_voided))").eq("status", "open"),
     confirmedPayments(supa, iso(yS)),
     fetchClosedOrders(supa, iso(todayS)),
   ]);
-  const tables = (tablesRes.data ?? []) as { number: number; status: string }[];
+  const rawTables = (tablesRes.data ?? []) as { id: string; number: number; status: string }[];
+  const openOrders = (ordersRes.data ?? []) as Array<{
+    table_id: string;
+    order_rounds: { order_line_items: { quantity: number; is_voided: boolean }[] }[];
+  }>;
+  const activeOrderTables = new Set(
+    openOrders
+      .filter((o) => o.order_rounds.flatMap((r) => r.order_line_items ?? []).some((li) => !li.is_voided && li.quantity > 0))
+      .map((o) => o.table_id)
+  );
+
+  const tables = rawTables.map((t) => ({
+    number: t.number,
+    status: activeOrderTables.has(t.id) ? "occupied" : "free",
+  }));
 
   const revenue = pays.filter((p) => new Date(p.paid_at) >= todayS).reduce((a, p) => a + Number(p.amount), 0);
   const revYesterday = pays

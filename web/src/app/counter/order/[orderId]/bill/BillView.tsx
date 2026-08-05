@@ -20,6 +20,7 @@ export function BillView({ orderId }: { orderId: string }) {
   const [showPay, setShowPay] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paidTotal, setPaidTotal] = useState(0);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
@@ -37,17 +38,52 @@ export function BillView({ orderId }: { orderId: string }) {
       .then(({ data }) => data && setDiscountsRole(data.discounts_role));
   }, [refetch]);
 
+  /* ── Pending approval screen ────────────────────────────── */
+  if (pendingApproval) {
+    return (
+      <div className="min-h-screen bg-[#fff8f7] flex items-center justify-center p-4 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffe2de] rounded-full blur-[100px] opacity-60 translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+        <main className="relative z-10 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-modal border border-[#e4beba] p-8 md:p-12 flex flex-col items-center text-center">
+            <div className="mb-6">
+              <div className="w-20 h-20 rounded-full bg-[#fff0ef] border-2 border-[#FFA000] flex items-center justify-center text-[#FFA000] shadow-sm">
+                <span className="material-symbols-outlined text-4xl">hourglass_top</span>
+              </div>
+            </div>
+            <div className="space-y-2 mb-6 w-full">
+              <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Payment Submitted
+              </h1>
+              <p className="text-sm text-[#605e5b]">Order #{order?.order.order_number}</p>
+            </div>
+            <div className="w-full bg-[#fff0ef] rounded-xl p-5 mb-6 border border-[#e4beba]">
+              <p className="text-xs font-semibold text-[#FFA000] uppercase tracking-wider mb-1">Status: Pending Owner Approval</p>
+              <p className="text-xs text-[#605e5b]">
+                Digital payment proof logged. Once the owner approves in Admin, the bill will close automatically.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push("/counter")}
+              className="w-full h-12 flex items-center justify-center gap-2 bg-[#af101a] text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-[#8b0d14] transition-all"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>grid_view</span>
+              Return to Counter
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   /* ── Payment success screen ────────────────────────────── */
   if (paid) {
     return (
       <div className="min-h-screen bg-[#fff8f7] flex items-center justify-center p-4 overflow-hidden relative">
-        {/* Decorative blurs */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffe2de] rounded-full blur-[100px] opacity-60 translate-x-1/3 -translate-y-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#ffe2de] rounded-full blur-[100px] opacity-60 -translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
         <main className="relative z-10 w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-modal border border-[#e4beba] p-8 md:p-12 flex flex-col items-center text-center">
-            {/* Animated check */}
             <div className="mb-8 animate-scale-in">
               <div className="w-24 h-24 rounded-full bg-[#ffe2de] flex items-center justify-center text-[#2E7D32] shadow-sm">
                 <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,8 +330,7 @@ export function BillView({ orderId }: { orderId: string }) {
               const res = await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
               setPaidTotal(totals.total);
               if (res.pending) {
-                alert("Payment submitted! Pending owner approval in Admin panel before closing bill.");
-                router.push("/counter");
+                setPendingApproval(true);
               } else {
                 setPaid(true);
               }
