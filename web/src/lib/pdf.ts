@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { LOGO_PNG_BASE64, LOGO_W, LOGO_H } from "./logo-data";
 
 // 80mm thermal-receipt renderers matching the Stitch kitchen + customer-bill slips.
 const W = 226.77; // 80mm in pt
@@ -81,9 +82,12 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const logo = await doc.embedPng(Buffer.from(LOGO_PNG_BASE64, "base64"));
+  const logoW = 46;
+  const logoH = (logoW * LOGO_H) / LOGO_W;
 
   // measure
-  let h = M + 24 + 12 + 12 + 6 + 24 + 8 + 16 + 8;
+  let h = M + logoH + 8 + 24 + 12 + 12 + 6 + 24 + 8 + 16 + 8;
   for (const it of slip.items) {
     h += Math.max(1, wrap(it.name, bold, 9, NAME_MAX).length) * 12 + (it.sub ? 10 : 0) + 6;
   }
@@ -92,8 +96,9 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   const d = drawing(page);
   let y = page.getHeight() - M;
 
-  // header
-  y -= 16;
+  // logo + header
+  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  y -= logoH + 4;
   d.center(slip.brand.toUpperCase(), y, 17, bold, RED);
   y -= 14;
   if (slip.branch) { d.center(slip.branch, y, 8.5, font, MUTED); y -= 11; }
@@ -165,8 +170,11 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Courier);
   const bold = await doc.embedFont(StandardFonts.CourierBold);
+  const logo = await doc.embedPng(Buffer.from(LOGO_PNG_BASE64, "base64"));
+  const logoW = 40;
+  const logoH = (logoW * LOGO_H) / LOGO_W;
 
-  let h = M + 26 + 16 + 12;
+  let h = M + logoH + 6 + 26 + 16 + 12;
   for (const it of slip.items) {
     h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT).length) * 13;
     h += (it.modifiers?.length ?? 0) * 12 + (it.contents?.length ?? 0) * 12 + 6;
@@ -176,7 +184,8 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const d = drawing(page);
   let y = page.getHeight() - M;
 
-  y -= 18;
+  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  y -= logoH + 20;
   d.center("KITCHEN ORDER", y, 14, bold, INK);
   y -= 18;
   d.left(slip.table, y, 10, bold, INK);

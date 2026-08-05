@@ -32,3 +32,8 @@ menu-images/jpg/
 # generated PDFs
 printer-bridge/output/
 *.pdf.tmp
+
+# design source extracts (reference only)
+claude-design/
+stitch-design/
+*.zip

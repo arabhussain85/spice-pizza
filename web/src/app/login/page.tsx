@@ -20,11 +20,9 @@ export default function LoginRoleSelectorPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo & Title */}
         <div className="text-center mb-10">
-          <div
-            className="w-20 h-20 rounded-3xl bg-[#af101a] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#af101a]/30"
-            style={{ fontSize: "40px" }}
-          >
-            🍕
+          <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/spice-logo.png" alt="Spice Pizza" className="w-full h-full object-contain drop-shadow-sm" />
           </div>
           <h1
             className="text-3xl font-black tracking-tight"
