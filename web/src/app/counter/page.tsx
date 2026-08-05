@@ -12,6 +12,7 @@ export default function CounterHomePage() {
   const [rows, setRows] = useState<TableGridRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [mounted, setMounted] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
@@ -24,6 +25,7 @@ export default function CounterHomePage() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     refetch();
     const supa = supaRef.current;
     const channel = supa
@@ -65,8 +67,8 @@ export default function CounterHomePage() {
               )}
             </>
           )}
-          <span className="hidden sm:block text-xs font-mono font-semibold text-[#605e5b] bg-[#fff0ef] px-3 py-1.5 rounded-lg border border-[#e4beba]">
-            {formatClock(now)}
+          <span suppressHydrationWarning className="hidden sm:block text-xs font-mono font-semibold text-[#605e5b] bg-[#fff0ef] px-3 py-1.5 rounded-lg border border-[#e4beba]">
+            {mounted ? formatClock(now) : ""}
           </span>
           <a
             href="/counter/reports"

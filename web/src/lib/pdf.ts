@@ -215,3 +215,14 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
 
   return doc.save();
 }
+
+/** Merge several single-doc PDFs into one (e.g. kitchen slip + customer bill). */
+export async function mergePdfs(parts: Uint8Array[]): Promise<Uint8Array> {
+  const out = await PDFDocument.create();
+  for (const bytes of parts) {
+    const src = await PDFDocument.load(bytes);
+    const pages = await out.copyPages(src, src.getPageIndices());
+    pages.forEach((p) => out.addPage(p));
+  }
+  return out.save();
+}
