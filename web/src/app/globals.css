@@ -1,40 +1,202 @@
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 @import "tailwindcss";
 
-/*
-  Spice Pizza brand theme (matches spice-docs mockups):
-  warm off-white background, brand red primary, green = free / red = occupied.
-*/
+/* ============================================================
+   Spice Pizza – Design System v2 (Stitch-aligned)
+   Warm Bistro-Modern aesthetic: Spice Red + Cream palette
+   ============================================================ */
 @theme {
-  --color-brand: #c0392b;
-  --color-brand-dark: #a5281b;
-  --color-brand-tint: #fbeae7;
-  --color-brand-tint-2: #f6d7d2;
+  /* Brand Reds */
+  --color-primary: #af101a;
+  --color-primary-dark: #8b0d14;
+  --color-primary-container: #d32f2f;
+  --color-primary-tint: #ffdad6;
+  --color-primary-tint-2: #ffe9e7;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fff2f0;
 
-  --color-cream: #faf6f0;
-  --color-surface: #ffffff;
+  /* Surfaces & Backgrounds */
+  --color-surface: #fff8f7;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff0ef;
+  --color-surface-container: #ffe9e7;
+  --color-surface-container-high: #ffe2de;
+  --color-surface-container-highest: #f9dcd9;
+  --color-surface-dim: #f1d3d0;
+  --color-surface-variant: #f9dcd9;
+  --color-surface-tint: #ba1a20;
 
-  --color-free: #15a34a;
-  --color-free-dark: #15803d;
-  --color-free-tint: #e7f6ec;
+  /* Cream Background */
+  --color-cream: #fcf9f5;
+  --color-background: #fff8f7;
 
-  --color-ink: #1f2430;
-  --color-muted: #6b7280;
-  --color-hairline: #ecece6;
+  /* Text */
+  --color-charcoal: #1a1a1a;
+  --color-on-surface: #271816;
+  --color-on-surface-variant: #5b403d;
+  --color-on-background: #271816;
 
-  --radius-card: 1rem;
+  /* Neutrals */
+  --color-secondary: #605e5b;
+  --color-secondary-container: #e6e2dd;
+  --color-on-secondary-container: #666460;
+  --color-tertiary: #51595b;
+  --color-outline: #8f6f6c;
+  --color-outline-variant: #e4beba;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Status Colors */
+  --color-status-free: #2e7d32;
+  --color-status-occupied: #d32f2f;
+  --color-status-pending: #ffa000;
+
+  /* Legacy aliases */
+  --color-brand: #af101a;
+  --color-brand-dark: #8b0d14;
+  --color-brand-tint: #ffdad6;
+  --color-brand-tint-2: #ffe9e7;
+  --color-ink: #271816;
+  --color-ink-muted: #5b403d;
+  --color-muted: #605e5b;
+  --color-hairline: #e4beba;
+  --color-free: #2e7d32;
+  --color-free-dark: #1b5e20;
+  --color-free-tint: #e8f5e9;
+
+  /* Typography */
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Hanken Grotesk", "Geist Mono", monospace;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-DEFAULT: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-card: 0.5rem;
 }
 
-html,
-body {
-  background: var(--color-cream);
-  color: var(--color-ink);
+/* --- Base Styles --- */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-/* thin, unobtrusive scrollbars for the counter panels */
+html, body {
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --- Material Symbols --- */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "liga";
+}
+
+/* --- Scrollbars --- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d8d3ca transparent;
+  scrollbar-color: #d1c8c6 transparent;
+}
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background-color: #d1c8c6; border-radius: 9999px; }
+
+/* --- Thermal Receipt Paper --- */
+.receipt-paper {
+  background-color: #fffefb;
+  box-shadow: 0 4px 20px -2px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+  font-family: "Hanken Grotesk", monospace;
+  background-image: radial-gradient(circle at 10px 0, transparent 10px, #fffefb 11px);
+  background-size: 20px 10px;
+  background-repeat: repeat-x;
+}
+.receipt-paper::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background-image: radial-gradient(circle at 10px 10px, transparent 10px, #fffefb 11px);
+  background-size: 20px 10px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+  transform: rotate(180deg);
+}
+.dotted-line {
+  border-top: 2px dashed #e4beba;
+  width: 100%;
+  margin: 12px 0;
+}
+
+/* --- Status Animations --- */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.status-pulse { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* --- Card hover lift --- */
+.card-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(175,16,26,0.08);
+}
+
+/* --- Touch target minimum --- */
+.touch-target { min-height: 48px; }
+
+/* --- Soft shadow utilities --- */
+.shadow-card { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.shadow-modal { box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+.shadow-panel { box-shadow: -4px 0 12px rgba(0,0,0,0.05); }
+
+/* --- Payment success animations --- */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+.animate-scale-in { animation: scale-in 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+.animate-fade-up { animation: fade-up 0.6s ease-out forwards; }
+.animate-delay-1 { animation-delay: 0.2s; }
+.animate-delay-2 { animation-delay: 0.4s; }
+.animate-delay-3 { animation-delay: 0.6s; }
+.check-animation {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: check-draw 1.5s ease-out forwards;
+  animation-delay: 0.3s;
+}
+
+/* --- Print --- */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print { display: none !important; }
 }

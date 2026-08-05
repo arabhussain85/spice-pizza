@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Settings } from "@/lib/types";
-import { Button, Card, cn } from "@/components/ui";
+import { Button, Card, Pill, cn, InputField } from "@/components/ui";
 import { updateSettings } from "../actions";
 
 export default function SettingsPage() {
@@ -27,99 +28,139 @@ export default function SettingsPage() {
 
   if (error && !s)
     return (
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <div className="mt-4 rounded-2xl border border-brand/30 bg-brand-tint/50 p-4 text-sm text-brand">
+      <div className="space-y-4">
+        <h1 className="text-2xl font-black text-ink">Settings</h1>
+        <div className="rounded-2xl border border-brand/30 bg-brand-tint/50 p-4 text-sm text-brand">
           {error.includes("schema cache") ? "Database not set up yet." : error}
         </div>
       </div>
     );
-  if (!s) return <div className="text-sm text-muted">Loading…</div>;
+  if (!s) return <div className="p-8 text-center text-sm font-semibold text-muted">Loading settings…</div>;
 
   const patch = (p: Partial<Settings>) => setS({ ...s, ...p });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-ink">Admin Settings</h1>
+          <p className="mt-1 text-xs text-muted">Configure store preferences, receipt formatting, and hardware printers.</p>
+        </div>
+      </div>
 
-      <Card className="mt-4 space-y-4 p-4">
-        <Field label="Brand name">
-          <input
-            value={s.brand_name}
-            onChange={(e) => patch({ brand_name: e.target.value })}
-            className="w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
-          />
-        </Field>
+      {/* Settings Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border-2 border-brand bg-brand-tint/30 p-4 shadow-2xs">
+          <div className="text-xl mb-1">⚙️</div>
+          <h3 className="font-bold text-sm text-brand">General Settings</h3>
+          <p className="text-xs text-muted mt-1">Brand name, tax rates & data retention</p>
+        </div>
 
-        <Field label="Service charge %">
+        <Link href="/admin/settings/receipt" className="group">
+          <div className="rounded-2xl border border-hairline bg-surface p-4 shadow-2xs transition-all hover:border-brand/40 hover:bg-cream/40 hover:shadow-xs">
+            <div className="text-xl mb-1 group-hover:scale-110 transition-transform">🧾</div>
+            <h3 className="font-bold text-sm text-ink group-hover:text-brand">Receipt Customizer</h3>
+            <p className="text-xs text-muted mt-1">Customize headers, footers & live layout preview</p>
+          </div>
+        </Link>
+
+        <Link href="/admin/settings/printer" className="group">
+          <div className="rounded-2xl border border-hairline bg-surface p-4 shadow-2xs transition-all hover:border-brand/40 hover:bg-cream/40 hover:shadow-xs">
+            <div className="text-xl mb-1 group-hover:scale-110 transition-transform">🖨️</div>
+            <h3 className="font-bold text-sm text-ink group-hover:text-brand">Printer Section</h3>
+            <p className="text-xs text-muted mt-1">Configure thermal printer bridge & test prints</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Main Settings Form */}
+      <Card className="p-6 space-y-5">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Store Configuration</h2>
+
+        <InputField
+          label="Brand / Restaurant Name"
+          value={s.brand_name}
+          onChange={(e) => patch({ brand_name: e.target.value })}
+        />
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Service Charge Percentage (%)
+          </label>
           <input
             type="number"
             inputMode="decimal"
             value={String(s.service_charge_pct)}
             onChange={(e) => patch({ service_charge_pct: Number(e.target.value) })}
-            className="w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+            className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
           />
-        </Field>
+        </div>
 
-        <Field label="Who can apply discounts">
-          <div className="flex gap-2">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Discount Authorization Role
+          </label>
+          <div className="grid grid-cols-2 gap-3">
             {(["owner", "any"] as const).map((r) => (
               <button
                 key={r}
+                type="button"
                 onClick={() => patch({ discounts_role: r })}
-                className={cn("flex-1 rounded-xl border px-3 py-2 text-sm font-medium", s.discounts_role === r ? "border-brand bg-brand text-white" : "border-hairline")}
+                className={cn(
+                  "rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer",
+                  s.discounts_role === r
+                    ? "border-brand bg-brand text-white shadow-xs"
+                    : "border-hairline bg-cream/30 text-ink-muted hover:border-brand/30"
+                )}
               >
-                {r === "owner" ? "Owner only (PIN)" : "Any staff"}
+                {r === "owner" ? "Owner Only (PIN)" : "Any Counter Staff"}
               </button>
             ))}
           </div>
-        </Field>
+        </div>
 
-        <Field label="Raw-data retention (days)">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Raw-Data Retention Policy (Days)
+          </label>
           <input
             type="number"
             inputMode="numeric"
             value={String(s.retention_days)}
             onChange={(e) => patch({ retention_days: Number(e.target.value) })}
-            className="w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+            className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
           />
-          <p className="mt-1 text-xs text-muted">Older orders roll up into daily summaries and raw detail is purged.</p>
-        </Field>
+          <p className="mt-1.5 text-xs text-muted">
+            Older completed orders automatically roll up into daily summaries and raw item logs are purged.
+          </p>
+        </div>
+
+        <Button
+          className="w-full py-3 text-sm shadow-md"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            setSaved(false);
+            try {
+              await updateSettings({
+                brand_name: s.brand_name,
+                service_charge_pct: s.service_charge_pct,
+                discounts_role: s.discounts_role,
+                retention_days: s.retention_days,
+              });
+              setSaved(true);
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {saved ? "✓ Settings Saved" : "Save Store Configuration"}
+        </Button>
+
+        {saved && <p className="text-center text-xs font-bold text-free-dark animate-in fade-in">✓ Changes saved successfully.</p>}
       </Card>
-
-      <Button
-        className="mt-4 w-full"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setSaved(false);
-          try {
-            await updateSettings({
-              brand_name: s.brand_name,
-              service_charge_pct: s.service_charge_pct,
-              discounts_role: s.discounts_role,
-              retention_days: s.retention_days,
-            });
-            setSaved(true);
-          } catch (e) {
-            setError((e as Error).message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "Saving…" : "Save settings"}
-      </Button>
-      {saved && <p className="mt-2 text-center text-sm text-free-dark">Saved.</p>}
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
-      {children}
-    </label>
   );
 }

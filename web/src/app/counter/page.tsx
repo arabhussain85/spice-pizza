@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { fetchTableGrid, type TableGridRow } from "@/lib/queries";
-import { Avatar, Logo, Pill } from "@/components/ui";
 import { LogoutButton } from "@/components/LogoutButton";
 import { formatClock } from "@/lib/time";
 import { TableCard } from "./TableCard";
+import { cn } from "@/components/ui";
 
 export default function CounterHomePage() {
   const supaRef = useRef(createClient());
@@ -43,54 +43,144 @@ export default function CounterHomePage() {
   }, [refetch]);
 
   const freeCount = rows?.filter((r) => r.table.status !== "occupied").length ?? 0;
+  const occupiedCount = rows ? rows.length - freeCount : 0;
 
   return (
-    <div>
-      {/* top bar */}
-      <header className="flex items-center justify-between rounded-2xl border border-hairline bg-surface px-5 py-3 shadow-sm">
-        <Link href="/" className="flex items-center gap-3">
-          <Logo size={36} />
-          <span className="text-lg font-bold">Spice Pizza</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          {rows && <Pill tone="green">{freeCount} tables free</Pill>}
-          <span className="text-sm tabular-nums text-muted">{formatClock(now)}</span>
-          <Avatar name="AK" />
-          <LogoutButton className="hidden sm:block" />
+    <div className="min-h-screen flex flex-col bg-[#FCF9F5]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      {/* ── Top Nav ─────────────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-30 h-[56px] flex items-center justify-between px-6 md:px-10 bg-[#fff8f7] border-b border-[#e4beba] shadow-sm">
+        <div className="text-xl font-bold text-[#af101a]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          Spice Pizza
+        </div>
+        <nav className="hidden md:flex items-center gap-1">
+          <a className="text-[#af101a] font-bold border-b-2 border-[#af101a] pb-0.5 px-2 text-sm" href="#">Tables</a>
+          <Link className="text-[#605e5b] hover:bg-[#ffe2de] transition-colors px-3 py-1 rounded text-sm" href="/admin">Admin</Link>
+          <Link className="text-[#605e5b] hover:bg-[#ffe2de] transition-colors px-3 py-1 rounded text-sm" href="/admin/orders">Orders</Link>
+        </nav>
+        <div className="flex items-center gap-3">
+          {rows && (
+            <>
+              <span className="hidden sm:flex items-center gap-1.5 bg-[#fff0ef] text-[#2E7D32] text-xs font-semibold px-3 py-1 rounded-full border border-green-200">
+                <span className="w-2 h-2 rounded-full bg-[#2E7D32] status-pulse" />
+                {freeCount} Free
+              </span>
+              {occupiedCount > 0 && (
+                <span className="hidden sm:flex items-center gap-1.5 bg-[#fff0ef] text-[#D32F2F] text-xs font-semibold px-3 py-1 rounded-full border border-red-200">
+                  <span className="w-2 h-2 rounded-full bg-[#D32F2F]" />
+                  {occupiedCount} Occupied
+                </span>
+              )}
+            </>
+          )}
+          <span className="hidden sm:block text-xs font-mono font-semibold text-[#605e5b] bg-[#fff0ef] px-3 py-1.5 rounded-lg border border-[#e4beba]">
+            {formatClock(now)}
+          </span>
+          <LogoutButton className="hidden sm:inline-flex text-xs" />
         </div>
       </header>
 
-      {/* heading */}
-      <div className="mt-6 flex items-baseline gap-3">
-        <h1 className="text-2xl font-bold">Tables</h1>
-        <span className="text-sm text-muted">Tap a table to take an order</span>
-      </div>
+      {/* ── Main Content ─────────────────────────────────────── */}
+      <main className="flex-1 pt-[56px] flex">
+        {/* Table Grid */}
+        <section className="flex-1 overflow-y-auto p-4 md:p-10">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-[#1A1A1A]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Table Overview
+            </h1>
+            <div className="flex gap-2">
+              <span className="bg-[#fff0ef] text-[#2E7D32] text-xs font-semibold px-3 py-1 rounded-full border border-green-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#2E7D32]" />
+                {freeCount} Free
+              </span>
+              <span className="bg-[#fff0ef] text-[#D32F2F] text-xs font-semibold px-3 py-1 rounded-full border border-red-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#D32F2F]" />
+                {occupiedCount} Occupied
+              </span>
+            </div>
+          </div>
 
-      {/* states */}
-      {error && (
-        <div className="mt-6 rounded-2xl border border-brand/30 bg-brand-tint/50 p-5 text-sm text-brand">
-          Couldn’t load tables: {error}
-          {error.includes("schema cache") && (
-            <div className="mt-1 text-brand-dark">
-              The database isn’t set up yet — run <code>supabase/schema.sql</code> then seed.
+          {/* States */}
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 mb-6">
+              Couldn&apos;t load tables: {error}
             </div>
           )}
-        </div>
-      )}
+          {!rows && !error && (
+            <div className="py-16 text-center text-sm font-semibold text-[#605e5b]">
+              <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-3">table_restaurant</span>
+              Loading table grid…
+            </div>
+          )}
+          {rows && rows.length === 0 && !error && (
+            <div className="py-16 text-center text-sm font-semibold text-[#605e5b]">
+              <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-3">table_restaurant</span>
+              No tables found — run the seed script.
+            </div>
+          )}
 
-      {!rows && !error && <div className="mt-6 text-sm text-muted">Loading tables…</div>}
+          {rows && rows.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rows.map((row) => (
+                <TableCard key={row.table.id} row={row} now={now} />
+              ))}
+            </div>
+          )}
+        </section>
 
-      {rows && rows.length === 0 && !error && (
-        <div className="mt-6 text-sm text-muted">No tables yet — run the seed script.</div>
-      )}
+        {/* ── Kitchen Queue Panel (Desktop) ───────────────────── */}
+        <aside className="hidden lg:flex flex-col w-[360px] shrink-0 bg-[#fff0ef] border-l border-[#e4beba] shadow-panel h-[calc(100vh-56px)] sticky top-[56px] p-5 overflow-y-auto">
+          <h3 className="text-lg font-bold text-[#1A1A1A] mb-5">Kitchen Queue</h3>
+          <div className="flex flex-col gap-3">
+            {rows && rows.filter(r => r.table.status === "occupied").length === 0 && (
+              <div className="flex flex-col items-center gap-3 py-10 text-[#605e5b] opacity-60">
+                <span className="material-symbols-outlined text-5xl">outdoor_grill</span>
+                <span className="text-sm font-medium">No active orders</span>
+              </div>
+            )}
+            {rows?.filter(r => r.table.status === "occupied").map(row => (
+              <div key={row.table.id} className="bg-white p-3 rounded-xl border border-[#e4beba] shadow-sm flex items-center gap-3">
+                <div className="w-11 h-11 rounded-lg bg-[#ffe9e7] flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[#af101a]" style={{fontSize:'20px'}}>local_pizza</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-[#1A1A1A]">Table {row.table.number}</div>
+                  <div className="text-xs text-[#605e5b]">#{row.order?.order_number?.slice(-4) ?? "—"}</div>
+                </div>
+                <span className="material-symbols-outlined text-[#FFA000]" style={{fontSize:'20px'}}>outdoor_grill</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-auto pt-5 border-t border-[#e4beba]">
+            <button
+              onClick={refetch}
+              className="w-full flex items-center justify-center gap-2 bg-white text-[#af101a] text-sm font-semibold h-12 rounded-xl border border-[#e4beba] hover:bg-[#ffe9e7] transition-colors active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined" style={{fontSize:'20px'}}>refresh</span>
+              Refresh Status
+            </button>
+          </div>
+        </aside>
+      </main>
 
-      {rows && rows.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((row) => (
-            <TableCard key={row.table.id} row={row} now={now} />
-          ))}
-        </div>
-      )}
+      {/* ── Mobile Bottom Nav ───────────────────────────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex justify-around items-center px-4 py-2 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-t-2xl" style={{paddingBottom:'env(safe-area-inset-bottom,8px)'}}>
+        <a className="flex flex-col items-center justify-center bg-[#ffe9e7] text-[#af101a] rounded-full px-5 py-1 active:scale-90 transition-transform" href="#">
+          <span className="material-symbols-outlined" style={{"fontVariationSettings": "'FILL' 1", fontSize:'24px'}}>grid_view</span>
+          <span className="text-[10px] font-semibold mt-0.5">Tables</span>
+        </a>
+        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin/orders">
+          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>receipt_long</span>
+          <span className="text-[10px] font-semibold mt-0.5">Orders</span>
+        </Link>
+        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin/menu">
+          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>menu_book</span>
+          <span className="text-[10px] font-semibold mt-0.5">Menu</span>
+        </Link>
+        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin">
+          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>admin_panel_settings</span>
+          <span className="text-[10px] font-semibold mt-0.5">Admin</span>
+        </Link>
+      </nav>
     </div>
   );
 }

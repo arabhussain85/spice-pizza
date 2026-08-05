@@ -8,7 +8,7 @@ import type { PaymentMethod } from "@/lib/types";
 import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { billTotals } from "@/lib/order-math";
-import { Button, cn } from "@/components/ui";
+import { cn } from "@/components/ui";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
 export function BillView({ orderId }: { orderId: string }) {
@@ -18,6 +18,8 @@ export function BillView({ orderId }: { orderId: string }) {
   const [discountsRole, setDiscountsRole] = useState<"owner" | "any">("owner");
   const [showDiscount, setShowDiscount] = useState(false);
   const [showPay, setShowPay] = useState(false);
+  const [paid, setPaid] = useState(false);
+  const [paidTotal, setPaidTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
@@ -35,7 +37,66 @@ export function BillView({ orderId }: { orderId: string }) {
       .then(({ data }) => data && setDiscountsRole(data.discounts_role));
   }, [refetch]);
 
-  if (!order) return <div className="mt-6 text-sm text-muted">Loading bill…</div>;
+  /* ── Payment success screen ────────────────────────────── */
+  if (paid) {
+    return (
+      <div className="min-h-screen bg-[#fff8f7] flex items-center justify-center p-4 overflow-hidden relative">
+        {/* Decorative blurs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffe2de] rounded-full blur-[100px] opacity-60 translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#ffe2de] rounded-full blur-[100px] opacity-60 -translate-x-1/3 translate-y-1/3 pointer-events-none" />
+
+        <main className="relative z-10 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-modal border border-[#e4beba] p-8 md:p-12 flex flex-col items-center text-center">
+            {/* Animated check */}
+            <div className="mb-8 animate-scale-in">
+              <div className="w-24 h-24 rounded-full bg-[#ffe2de] flex items-center justify-center text-[#2E7D32] shadow-sm">
+                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path className="check-animation" d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </div>
+            </div>
+            <div className="opacity-0 animate-fade-up animate-delay-1 space-y-2 mb-10 w-full" style={{animationFillMode:'forwards'}}>
+              <h1 className="text-3xl font-bold text-[#271816]" style={{fontFamily:"'Plus Jakarta Sans', sans-serif"}}>Payment Successful</h1>
+              <p className="text-[#605e5b]">Order #{order?.order.order_number}</p>
+            </div>
+            <div className="opacity-0 animate-fade-up animate-delay-2 w-full bg-[#fff0ef] rounded-xl p-6 mb-10 border border-[#e4beba]" style={{animationFillMode:'forwards'}}>
+              <p className="text-xs font-semibold text-[#605e5b] uppercase tracking-wider mb-2">Amount Paid</p>
+              <div className="text-5xl font-bold text-[#af101a]" style={{fontFamily:"'Hanken Grotesk', sans-serif", letterSpacing:'-0.02em'}}>
+                <span className="text-2xl align-top relative top-2 mr-1">Rs.</span>{formatRs(paidTotal).replace("Rs. ", "")}
+              </div>
+            </div>
+            <div className="opacity-0 animate-fade-up animate-delay-3 w-full flex flex-col sm:flex-row gap-4" style={{animationFillMode:'forwards'}}>
+              <button
+                onClick={() => window.open(`/api/print/bill/${orderId}`, "_blank")}
+                className="flex-1 h-12 flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
+              >
+                <span className="material-symbols-outlined" style={{fontSize:'20px'}}>print</span>
+                Print Receipt
+              </button>
+              <button
+                onClick={() => router.push("/counter")}
+                className="flex-1 h-12 flex items-center justify-center gap-2 bg-[#af101a] text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-[#8b0d14] transition-all active:scale-[0.97]"
+              >
+                <span className="material-symbols-outlined" style={{"fontVariationSettings": "'FILL' 1", fontSize:'20px'}}>grid_view</span>
+                Return to Tables
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-[#FCF9F5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-[#605e5b]">
+          <span className="material-symbols-outlined text-4xl text-[#e4beba]">receipt_long</span>
+          <span className="text-sm font-medium">Loading bill…</span>
+        </div>
+      </div>
+    );
+  }
 
   const { order: o, rounds, discount, table } = order;
   const allLines = rounds.flatMap((r) => r.order_line_items);
@@ -53,95 +114,160 @@ export function BillView({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div>
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="px-3 py-1.5" onClick={() => router.push(`/counter/order/${orderId}`)}>
-            ← Table {table?.number ?? ""}
-          </Button>
-          <div className="text-lg font-bold">Bill · Table {table?.number ?? "—"}</div>
+    <div className="min-h-screen bg-[#FCF9F5]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {/* ── Header ──────────────────────────────────────────── */}
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 md:px-8 h-14 bg-[#fff8f7] border-b border-[#e4beba] shadow-sm">
+        <button
+          onClick={() => router.push(`/counter/order/${orderId}`)}
+          className="flex items-center gap-1.5 text-[#605e5b] hover:text-[#af101a] transition-colors text-sm font-semibold"
+        >
+          <span className="material-symbols-outlined" style={{fontSize:'20px'}}>arrow_back</span>
+          Table {table?.number ?? ""}
+        </button>
+        <div className="text-base font-bold text-[#1A1A1A]">
+          Bill · Table {table?.number ?? "—"}
         </div>
-        <div className="text-xs text-muted">
+        <div className="text-xs text-[#605e5b] hidden sm:block">
           Opened {formatClock(new Date(o.opened_at))} · {rounds.length} {rounds.length === 1 ? "round" : "rounds"}
-          {o.server_name ? ` · Server ${o.server_name}` : ""}
         </div>
       </header>
 
-      <div className="mx-auto mt-4 max-w-xl">
-        <div className="rounded-2xl border border-hairline bg-surface p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Itemized bill</h2>
-            <span className="text-xs tracking-wide text-muted">#{o.order_number}</span>
+      {/* ── Content ─────────────────────────────────────────── */}
+      <div className="max-w-xl mx-auto px-4 py-6">
+        {/* Receipt Paper Card */}
+        <div className="receipt-paper rounded-xl relative px-6 pt-6 pb-12">
+          {/* Restaurant Header */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-[#af101a] uppercase tracking-wider mb-1">Spice Pizza</h1>
+            <p className="text-sm text-[#605e5b]">Main Branch</p>
+            <p className="text-sm text-[#605e5b]">+92 300 000 0000</p>
           </div>
 
-          <div className="mt-4 space-y-4">
+          {/* Meta */}
+          <div className="flex justify-between items-start text-xs text-[#5b403d] mb-3">
+            <div>
+              <p>Date: {new Date(o.opened_at).toLocaleDateString("en-PK", {day:'2-digit', month:'short', year:'numeric'})}</p>
+              <p>Time: {formatClock(new Date(o.opened_at))}</p>
+            </div>
+            <div className="text-right">
+              <p>Bill # <span className="font-bold">{o.order_number}</span></p>
+              <p>Table <span className="font-bold text-[#af101a]">T-{String(table?.number ?? "").padStart(2,"0")}</span></p>
+            </div>
+          </div>
+          <div className="dotted-line" />
+
+          {/* Column Headers */}
+          <div className="flex justify-between text-xs font-bold text-[#271816] uppercase tracking-wide mb-2">
+            <span className="w-3/5">Item</span>
+            <span className="w-1/5 text-center">Qty</span>
+            <span className="w-1/5 text-right">Price</span>
+          </div>
+          <div className="dotted-line" />
+
+          {/* Line Items by Round */}
+          <div className="space-y-4">
             {rounds.map((r) => (
               <div key={r.id}>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#605e5b] mb-2">
                   Round {r.round_number}
                   {r.sent_to_kitchen_at ? ` · ${formatClock(new Date(r.sent_to_kitchen_at))}` : ""}
                 </div>
-                <div className="mt-2 space-y-2">
+                <div className="space-y-2">
                   {r.order_line_items.map((li) => (
-                    <div key={li.id} className="flex items-start gap-3 text-sm">
-                      <span className="w-7 shrink-0 text-muted">{li.quantity}×</span>
-                      <div className={cn("min-w-0 flex-1", li.is_voided && "text-muted line-through")}>
-                        <span className="font-medium">
+                    <div key={li.id} className="flex items-start text-sm">
+                      <div className={cn("w-3/5 pr-2", li.is_voided && "text-[#605e5b] line-through")}>
+                        <span className="block font-semibold">
                           {li.name_snapshot}
                           {li.size_snapshot ? ` (${li.size_snapshot})` : ""}
                         </span>
                         {(li.note || li.modifiers.length > 0) && !li.is_voided && (
-                          <div className="text-xs text-muted">
+                          <span className="block text-xs text-[#605e5b]">
                             {[li.note, ...li.modifiers].filter(Boolean).join(", ")}
-                          </div>
+                          </span>
                         )}
-                        {li.is_voided && <span className="ml-1 text-xs">(void: {li.void_reason})</span>}
+                        {li.is_voided && <span className="text-xs">(void: {li.void_reason})</span>}
                       </div>
-                      <div className={cn("text-right font-semibold tabular-nums", li.is_voided && "text-muted line-through")}>
-                        {formatRs(li.unit_price * li.quantity)}
+                      <span className="w-1/5 text-center text-[#605e5b]">{li.quantity}</span>
+                      <div className="w-1/5 text-right flex items-start justify-end gap-1">
+                        <span className={cn("font-semibold tabular-nums", li.is_voided && "text-[#605e5b] line-through")}>
+                          {formatRs(li.unit_price * li.quantity)}
+                        </span>
+                        {!li.is_voided && (
+                          <button onClick={() => handleVoid(li.id)} className="text-[9px] text-[#605e5b] hover:text-[#af101a] mt-0.5">
+                            ×
+                          </button>
+                        )}
                       </div>
-                      {!li.is_voided && (
-                        <button onClick={() => handleVoid(li.id)} className="text-xs text-muted hover:text-brand">
-                          void
-                        </button>
-                      )}
                     </div>
                   ))}
                   {r.order_line_items.length === 0 && (
-                    <div className="text-xs text-muted">No items.</div>
+                    <div className="text-xs text-[#605e5b]">No items.</div>
                   )}
                 </div>
               </div>
             ))}
           </div>
+          <div className="dotted-line" />
 
-          <div className="mt-5 space-y-1.5 border-t border-dashed border-hairline pt-4 text-sm">
-            <Row label="Subtotal" value={formatRs(totals.subtotal)} />
-            <Row label={`Service charge (${o.service_charge_pct}%)`} value={formatRs(totals.service)} />
+          {/* Totals */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-[#605e5b]">
+              <span>Subtotal</span>
+              <span>{formatRs(totals.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-[#605e5b]">
+              <span>Service charge ({o.service_charge_pct}%)</span>
+              <span>{formatRs(totals.service)}</span>
+            </div>
             {totals.discount > 0 && (
-              <Row label={`Discount${discount?.reason ? ` · ${discount.reason}` : ""}`} value={`− ${formatRs(totals.discount)}`} />
+              <div className="flex justify-between text-[#2E7D32]">
+                <span>Discount{discount?.reason ? ` · ${discount.reason}` : ""}</span>
+                <span>− {formatRs(totals.discount)}</span>
+              </div>
             )}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-base font-bold">Total</span>
-              <span className="text-2xl font-bold text-brand">{formatRs(totals.total)}</span>
+            <div className="flex items-center justify-between pt-3 mt-2 border-t-2 border-[#271816]">
+              <span className="text-base font-bold text-[#271816]">TOTAL</span>
+              <span className="text-3xl font-bold text-[#af101a]" style={{fontFamily:"'Hanken Grotesk', sans-serif", letterSpacing:'-0.02em'}}>
+                {formatRs(totals.total)}
+              </span>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => window.open(`/api/print/bill/${orderId}`, "_blank")}>
-              Print bill
-            </Button>
-            <Button variant="soft" onClick={() => setShowDiscount(true)}>
-              Apply discount
-            </Button>
-            <Button variant="primary" className="flex-1" onClick={() => setShowPay(true)}>
-              Close &amp; Pay
-            </Button>
+          <div className="dotted-line" />
+          <div className="text-center text-xs text-[#605e5b] mt-2">
+            <p className="font-bold text-[#271816] mb-1">THANK YOU FOR VISITING!</p>
+            <p>Follow us on Instagram <span className="font-bold text-[#af101a]">@SpicePizza</span></p>
           </div>
-          {error && <p className="mt-2 text-sm text-brand">{error}</p>}
         </div>
+
+        {/* Actions */}
+        <div className="mt-5 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => window.open(`/api/print/bill/${orderId}`, "_blank")}
+            className="flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold h-12 px-5 rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
+          >
+            <span className="material-symbols-outlined" style={{fontSize:'18px'}}>print</span>
+            Print bill
+          </button>
+          <button
+            onClick={() => setShowDiscount(true)}
+            className="flex items-center justify-center gap-2 bg-[#ffe9e7] text-[#af101a] border border-[#e4beba] text-sm font-semibold h-12 px-5 rounded-xl hover:bg-[#ffe2de] transition-all active:scale-[0.97]"
+          >
+            <span className="material-symbols-outlined" style={{fontSize:'18px'}}>local_offer</span>
+            Discount
+          </button>
+          <button
+            onClick={() => setShowPay(true)}
+            className="flex-1 flex items-center justify-center gap-2 bg-[#af101a] text-white text-sm font-semibold h-12 rounded-xl shadow-sm hover:bg-[#8b0d14] transition-all active:scale-[0.97]"
+          >
+            <span className="material-symbols-outlined" style={{fontSize:'18px'}}>payments</span>
+            Close &amp; Pay
+          </button>
+        </div>
+        {error && <p className="mt-3 text-sm text-[#af101a] text-center">{error}</p>}
       </div>
 
+      {/* ── Modals ──────────────────────────────────────────── */}
       {showDiscount && (
         <DiscountModal
           requirePin={discountsRole === "owner"}
@@ -158,7 +284,6 @@ export function BillView({ orderId }: { orderId: string }) {
           }}
         />
       )}
-
       {showPay && (
         <PaymentModal
           total={totals.total}
@@ -167,22 +292,14 @@ export function BillView({ orderId }: { orderId: string }) {
             setError(null);
             try {
               await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
-              router.push("/counter");
+              setPaidTotal(totals.total);
+              setPaid(true);
             } catch (e) {
               setError((e as Error).message);
             }
           }}
         />
       )}
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-muted">
-      <span>{label}</span>
-      <span className="tabular-nums">{value}</span>
     </div>
   );
 }
@@ -205,15 +322,20 @@ function DiscountModal({
 
   return (
     <Overlay onClose={onClose}>
-      <h3 className="text-lg font-bold">Apply discount</h3>
-      <div className="mt-4 flex gap-2">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="material-symbols-outlined text-[#af101a]" style={{fontSize:'24px'}}>local_offer</span>
+        <h3 className="text-lg font-bold text-[#1A1A1A]">Apply Discount</h3>
+      </div>
+      <div className="flex gap-2 mb-4">
         {(["percent", "fixed"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setType(t)}
             className={cn(
-              "flex-1 rounded-xl border px-3 py-2 text-sm font-medium",
-              type === t ? "border-brand bg-brand text-white" : "border-hairline",
+              "flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition-all",
+              type === t
+                ? "border-[#af101a] bg-[#af101a] text-white"
+                : "border-[#e4beba] bg-white text-[#605e5b] hover:border-[#af101a]/40"
             )}
           >
             {t === "percent" ? "Percent (%)" : "Fixed (Rs.)"}
@@ -226,13 +348,13 @@ function DiscountModal({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={type === "percent" ? "e.g. 10" : "e.g. 200"}
-        className="mt-3 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+        className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a] transition-colors mb-3"
       />
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder="Reason (optional)"
-        className="mt-2 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+        className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a] transition-colors mb-3"
       />
       {requirePin && (
         <input
@@ -240,17 +362,18 @@ function DiscountModal({
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           placeholder="Owner PIN"
-          className="mt-2 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+          className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a] transition-colors mb-3"
         />
       )}
-      {err && <p className="mt-2 text-sm text-brand">{err}</p>}
-      <div className="mt-4 flex gap-3">
-        <Button variant="outline" className="flex-1" onClick={onClose}>
+      {err && <p className="text-sm text-[#af101a] mb-3">{err}</p>}
+      <div className="flex gap-3 mt-1">
+        <button
+          onClick={onClose}
+          className="flex-1 h-11 border border-[#e4beba] rounded-xl text-sm font-semibold text-[#605e5b] hover:bg-[#fff0ef] transition-colors"
+        >
           Cancel
-        </Button>
-        <Button
-          variant="primary"
-          className="flex-1"
+        </button>
+        <button
           disabled={busy || !value}
           onClick={async () => {
             setBusy(true);
@@ -259,9 +382,10 @@ function DiscountModal({
             setBusy(false);
             if (msg) setErr(msg);
           }}
+          className="flex-1 h-11 bg-[#af101a] text-white rounded-xl text-sm font-semibold hover:bg-[#8b0d14] transition-colors disabled:opacity-50"
         >
-          Apply
-        </Button>
+          {busy ? "Applying…" : "Apply"}
+        </button>
       </div>
     </Overlay>
   );
@@ -281,71 +405,82 @@ function PaymentModal({
   const [screenshot, setScreenshot] = useState("");
   const [busy, setBusy] = useState(false);
   const online = method === "jazzcash" || method === "easypaisa";
-  const methods: { key: PaymentMethod; label: string }[] = [
-    { key: "cash", label: "Cash" },
-    { key: "card", label: "Card" },
-    { key: "jazzcash", label: "JazzCash" },
-    { key: "easypaisa", label: "EasyPaisa" },
-    { key: "other", label: "Other" },
+  const methods: { key: PaymentMethod; label: string; icon: string }[] = [
+    { key: "cash", label: "Cash", icon: "payments" },
+    { key: "card", label: "Card", icon: "credit_card" },
+    { key: "jazzcash", label: "JazzCash", icon: "smartphone" },
+    { key: "easypaisa", label: "EasyPaisa", icon: "smartphone" },
+    { key: "other", label: "Other", icon: "more_horiz" },
   ];
 
   return (
     <Overlay onClose={onClose}>
-      <h3 className="text-lg font-bold">Close &amp; Pay</h3>
-      <div className="mt-1 text-sm text-muted">
-        Total due <span className="font-semibold text-ink">{formatRs(total)}</span>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="material-symbols-outlined text-[#af101a]" style={{fontSize:'24px'}}>payments</span>
+        <h3 className="text-lg font-bold text-[#1A1A1A]">Close & Pay</h3>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="text-sm text-[#605e5b] mb-4">
+        Total due{" "}
+        <span className="font-bold text-[#af101a] text-base" style={{fontFamily:"'Hanken Grotesk', sans-serif"}}>
+          {formatRs(total)}
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mb-4">
         {methods.map((m) => (
           <button
             key={m.key}
             onClick={() => setMethod(m.key)}
             className={cn(
-              "rounded-xl border px-3 py-2 text-sm font-medium",
-              method === m.key ? "border-brand bg-brand text-white" : "border-hairline",
+              "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs font-semibold transition-all",
+              method === m.key
+                ? "border-[#af101a] bg-[#af101a] text-white"
+                : "border-[#e4beba] bg-white text-[#605e5b] hover:border-[#af101a]/40"
             )}
           >
+            <span className="material-symbols-outlined" style={{fontSize:'20px'}}>{m.icon}</span>
             {m.label}
           </button>
         ))}
       </div>
-      <label className="mt-4 block text-sm font-medium">Amount received</label>
+      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Amount received</label>
       <input
         type="number"
         inputMode="numeric"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        className="mt-1 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+        className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a] transition-colors mb-3"
       />
       {online && (
         <>
-          <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800 mb-3">
             Online payment — will be marked <b>pending</b> until the owner confirms it in the Admin panel.
           </div>
           <input
             value={screenshot}
             onChange={(e) => setScreenshot(e.target.value)}
             placeholder="Payment screenshot URL (optional)"
-            className="mt-2 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+            className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm outline-none focus:border-[#af101a] transition-colors mb-3"
           />
         </>
       )}
-      <div className="mt-4 flex gap-3">
-        <Button variant="outline" className="flex-1" onClick={onClose}>
+      <div className="flex gap-3 mt-1">
+        <button
+          onClick={onClose}
+          className="flex-1 h-12 border border-[#e4beba] rounded-xl text-sm font-semibold text-[#605e5b] hover:bg-[#fff0ef] transition-colors"
+        >
           Cancel
-        </Button>
-        <Button
-          variant="primary"
-          className="flex-1"
+        </button>
+        <button
           disabled={busy}
           onClick={async () => {
             setBusy(true);
             await onConfirm(method, Number(amount), online ? screenshot || null : null);
             setBusy(false);
           }}
+          className="flex-1 h-12 bg-[#af101a] text-white rounded-xl text-sm font-semibold hover:bg-[#8b0d14] transition-colors disabled:opacity-50 shadow-sm"
         >
           {busy ? "Closing…" : online ? "Close (pending)" : "Close & Pay"}
-        </Button>
+        </button>
       </div>
     </Overlay>
   );
@@ -353,8 +488,12 @@ function PaymentModal({
 
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative z-10 w-full max-w-sm bg-white rounded-2xl p-6 shadow-modal border border-[#e4beba] max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>

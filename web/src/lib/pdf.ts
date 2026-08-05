@@ -1,11 +1,10 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
-// 80mm thermal-receipt style page.
-const WIDTH = 226.77; // 80mm in pt
+// Thermal-receipt style page dimensions.
+const WIDTH_80MM = 226.77; // 80mm in pt
 const MARGIN = 12;
-const CONTENT = WIDTH - MARGIN * 2;
-const BRAND = rgb(0.753, 0.224, 0.169); // #c0392b
-const INK = rgb(0.12, 0.14, 0.19);
+const BRAND = rgb(0.86, 0.15, 0.15); // #dc2626
+const INK = rgb(0.07, 0.09, 0.15);
 const MUTED = rgb(0.42, 0.45, 0.5);
 
 export interface ReceiptRow {
@@ -27,6 +26,8 @@ export interface ReceiptModel {
   title: string;
   subtitle?: string;
   metaRight?: string;
+  address?: string;
+  phone?: string;
   sections: ReceiptSection[];
   totals?: ReceiptTotal[];
   footer?: string;
@@ -55,9 +56,12 @@ async function addReceiptPage(
   bold: PDFFont,
   model: ReceiptModel,
 ) {
+  const CONTENT = WIDTH_80MM - MARGIN * 2;
   // ---- measure height ----
   let h = MARGIN + 22; // title
   if (model.subtitle) h += 14;
+  if (model.address) h += 12;
+  if (model.phone) h += 12;
   if (model.metaRight) h += 12;
   h += 8;
   for (const s of model.sections) {
@@ -74,7 +78,7 @@ async function addReceiptPage(
   if (model.footer) h += 20;
   h += MARGIN;
 
-  const page = doc.addPage([WIDTH, Math.max(h, 160)]);
+  const page = doc.addPage([WIDTH_80MM, Math.max(h, 160)]);
   let y = page.getHeight() - MARGIN;
 
   const text = (
@@ -88,15 +92,23 @@ async function addReceiptPage(
   ) => p.drawText(s, { x, y: yy, size, font: f, color });
 
   const rightText = (s: string, yy: number, size: number, f: PDFFont, color = INK) =>
-    text(page, s, WIDTH - MARGIN - f.widthOfTextAtSize(s, size), yy, size, f, color);
+    text(page, s, WIDTH_80MM - MARGIN - f.widthOfTextAtSize(s, size), yy, size, f, color);
 
-  // ---- title ----
+  // ---- title & header ----
   y -= 14;
   text(page, model.title, MARGIN, y, 13, bold, BRAND);
   y -= 14;
   if (model.subtitle) {
-    text(page, model.subtitle, MARGIN, y, 9, font, INK);
-    y -= 13;
+    text(page, model.subtitle, MARGIN, y, 8.5, font, MUTED);
+    y -= 12;
+  }
+  if (model.address) {
+    text(page, model.address, MARGIN, y, 8, font, INK);
+    y -= 11;
+  }
+  if (model.phone) {
+    text(page, `Tel: ${model.phone}`, MARGIN, y, 8, font, INK);
+    y -= 11;
   }
   if (model.metaRight) {
     text(page, model.metaRight, MARGIN, y, 8, font, MUTED);
@@ -105,7 +117,7 @@ async function addReceiptPage(
   const hr = () => {
     page.drawLine({
       start: { x: MARGIN, y },
-      end: { x: WIDTH - MARGIN, y },
+      end: { x: WIDTH_80MM - MARGIN, y },
       thickness: 0.5,
       color: rgb(0.85, 0.85, 0.82),
     });
@@ -159,7 +171,6 @@ async function addReceiptPage(
       y -= 10;
     }
   }
-
 }
 
 export async function renderReceipts(models: ReceiptModel[]): Promise<Uint8Array> {
