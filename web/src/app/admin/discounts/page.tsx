@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { Card, Pill, Button, cn } from "@/components/ui";
+import { PromotionsManager } from "./PromotionsManager";
 
 interface DiscountActivity {
   id: string;
@@ -95,6 +96,8 @@ export default function AdminDiscountsPage() {
           {savedMsg}
         </div>
       )}
+
+      <PromotionsManager />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Settings */}

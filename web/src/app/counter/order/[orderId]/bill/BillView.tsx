@@ -8,6 +8,7 @@ import type { PaymentMethod } from "@/lib/types";
 import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { billTotals } from "@/lib/order-math";
+import { fetchActivePromotions, fetchMenuMeta, promoTotals, type Promotion, type MenuMeta } from "@/lib/promotions";
 import { cn } from "@/components/ui";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
@@ -15,6 +16,8 @@ export function BillView({ orderId }: { orderId: string }) {
   const router = useRouter();
   const supaRef = useRef(createClient());
   const [order, setOrder] = useState<OrderFull | null>(null);
+  const [promos, setPromos] = useState<Promotion[]>([]);
+  const [meta, setMeta] = useState<Map<string, MenuMeta>>(new Map());
   const [discountsRole, setDiscountsRole] = useState<"owner" | "any">("owner");
   const [showDiscount, setShowDiscount] = useState(false);
   const [showPay, setShowPay] = useState(false);
@@ -36,6 +39,8 @@ export function BillView({ orderId }: { orderId: string }) {
       .eq("id", 1)
       .maybeSingle()
       .then(({ data }) => data && setDiscountsRole(data.discounts_role));
+    fetchActivePromotions(supa).then(setPromos).catch(() => {});
+    fetchMenuMeta(supa).then(setMeta).catch(() => {});
   }, [refetch]);
 
   /* ── Pending approval screen ────────────────────────────── */
@@ -141,6 +146,8 @@ export function BillView({ orderId }: { orderId: string }) {
     o.service_charge_pct,
     discount ? { type: discount.type, value: discount.value } : null,
   );
+  const promoRes = promoTotals(allLines, promos, meta);
+  const finalTotal = Math.max(0, totals.total - promoRes.discount);
 
   async function handleVoid(lineId: string) {
     const reason = window.prompt("Void reason (required):");
@@ -255,6 +262,12 @@ export function BillView({ orderId }: { orderId: string }) {
               <span>Service charge ({o.service_charge_pct}%)</span>
               <span>{formatRs(totals.service)}</span>
             </div>
+            {promoRes.discount > 0 && (
+              <div className="flex justify-between text-[#2E7D32]">
+                <span>Promo{promoRes.names.length ? ` · ${promoRes.names.join(", ")}` : ""}</span>
+                <span>− {formatRs(promoRes.discount)}</span>
+              </div>
+            )}
             {totals.discount > 0 && (
               <div className="flex justify-between text-[#2E7D32]">
                 <span>Discount{discount?.reason ? ` · ${discount.reason}` : ""}</span>
@@ -264,7 +277,7 @@ export function BillView({ orderId }: { orderId: string }) {
             <div className="flex items-center justify-between pt-3 mt-2 border-t-2 border-[#271816]">
               <span className="text-base font-bold text-[#271816]">TOTAL</span>
               <span className="text-3xl font-bold text-[#af101a]" style={{fontFamily:"'Hanken Grotesk', sans-serif", letterSpacing:'-0.02em'}}>
-                {formatRs(totals.total)}
+                {formatRs(finalTotal)}
               </span>
             </div>
           </div>
@@ -322,13 +335,13 @@ export function BillView({ orderId }: { orderId: string }) {
       )}
       {showPay && (
         <PaymentModal
-          total={totals.total}
+          total={finalTotal}
           onClose={() => setShowPay(false)}
           onConfirm={async (method, amount, screenshotUrl) => {
             setError(null);
             try {
               const res = await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
-              setPaidTotal(totals.total);
+              setPaidTotal(finalTotal);
               if (res.pending) {
                 setPendingApproval(true);
               } else {

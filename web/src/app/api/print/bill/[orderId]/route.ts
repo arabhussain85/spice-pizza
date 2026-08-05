@@ -3,6 +3,7 @@ import { fetchOrderFull } from "@/lib/queries";
 import { renderBill, type BillSlip } from "@/lib/pdf";
 import { formatRs } from "@/lib/money";
 import { billTotals } from "@/lib/order-math";
+import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promotions";
 import type { OrderLineItem } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -23,6 +24,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     full.order.service_charge_pct,
     full.discount ? { type: full.discount.type, value: full.discount.value } : null,
   );
+  const promos = await fetchActivePromotions(supa);
+  const promo = promoTotals(live, promos, await fetchMenuMeta(supa));
+  const finalTotal = Math.max(0, totals.total - promo.discount);
 
   const item = (li: OrderLineItem) => ({
     qty: li.quantity,
@@ -42,9 +46,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     subtotal: formatRs(totals.subtotal),
     charges: [
       { label: `Service charge (${full.order.service_charge_pct}%)`, value: formatRs(totals.service) },
+      ...(promo.discount > 0 ? [{ label: `Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}`, value: `- ${formatRs(promo.discount)}` }] : []),
       ...(totals.discount > 0 ? [{ label: "Discount", value: `- ${formatRs(totals.discount)}` }] : []),
     ],
-    total: formatRs(totals.total),
+    total: formatRs(finalTotal),
     footer1: "THANK YOU FOR VISITING!",
     footer2: "Follow us on Instagram @SpicePizza",
   };
