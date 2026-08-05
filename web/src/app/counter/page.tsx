@@ -138,36 +138,70 @@ export default function CounterHomePage() {
           )}
         </section>
 
-        {/* ── Kitchen Queue Panel (Desktop) ───────────────────── */}
+        {/* ── Kitchen Queue & Pending Payments Panel (Desktop) ── */}
         <aside className="hidden lg:flex flex-col w-[360px] shrink-0 bg-[#fff0ef] border-l border-[#e4beba] shadow-panel h-[calc(100vh-56px)] sticky top-[56px] p-5 overflow-y-auto">
-          <h3 className="text-lg font-bold text-[#1A1A1A] mb-5">Kitchen Queue</h3>
+          {/* Pending Payments Section */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[#af101a] mb-3 flex items-center gap-1.5">
+              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>hourglass_top</span>
+              Pending Payments
+            </h3>
+            <div className="bg-white rounded-xl border border-[#e4beba] p-3 text-xs text-[#605e5b] shadow-2xs">
+              Online/digital payments (JazzCash / EasyPaisa / Card) remain pending approval by Owner in Admin panel before bill completion.
+            </div>
+          </div>
+
+          {/* Kitchen Queue Section */}
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[#1A1A1A] mb-3 flex items-center gap-1.5">
+            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>outdoor_grill</span>
+            Kitchen Queue
+          </h3>
           <div className="flex flex-col gap-3">
             {rows && rows.filter(r => r.table.status === "occupied").length === 0 && (
-              <div className="flex flex-col items-center gap-3 py-10 text-[#605e5b] opacity-60">
-                <span className="material-symbols-outlined text-5xl">outdoor_grill</span>
-                <span className="text-sm font-medium">No active orders</span>
+              <div className="flex flex-col items-center gap-2 py-8 text-[#605e5b] opacity-60">
+                <span className="material-symbols-outlined text-4xl">outdoor_grill</span>
+                <span className="text-xs font-medium">No active kitchen orders</span>
               </div>
             )}
             {rows?.filter(r => r.table.status === "occupied").map(row => (
               <div key={row.table.id} className="bg-white p-3 rounded-xl border border-[#e4beba] shadow-sm flex items-center gap-3">
-                <div className="w-11 h-11 rounded-lg bg-[#ffe9e7] flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[#af101a]" style={{fontSize:'20px'}}>local_pizza</span>
+                <div className="w-10 h-10 rounded-lg bg-[#ffe9e7] flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[#af101a]" style={{fontSize:'18px'}}>local_pizza</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-[#1A1A1A]">Table {row.table.number}</div>
-                  <div className="text-xs text-[#605e5b]">#{row.order?.order_number?.slice(-4) ?? "—"}</div>
+                  <div className="text-xs font-bold text-[#1A1A1A]">Table {row.table.number}</div>
+                  <div className="text-[10px] text-[#605e5b]">#{row.order?.order_number?.slice(-4) ?? "—"}</div>
                 </div>
-                <span className="material-symbols-outlined text-[#FFA000]" style={{fontSize:'20px'}}>outdoor_grill</span>
+                <span className="material-symbols-outlined text-[#FFA000]" style={{fontSize:'18px'}}>outdoor_grill</span>
               </div>
             ))}
           </div>
-          <div className="mt-auto pt-5 border-t border-[#e4beba]">
+
+          {/* Footer Actions & Dev Reset */}
+          <div className="mt-auto pt-4 border-t border-[#e4beba] space-y-2">
             <button
               onClick={refetch}
-              className="w-full flex items-center justify-center gap-2 bg-white text-[#af101a] text-sm font-semibold h-12 rounded-xl border border-[#e4beba] hover:bg-[#ffe9e7] transition-colors active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-white text-[#af101a] text-xs font-bold h-10 rounded-xl border border-[#e4beba] hover:bg-[#ffe9e7] transition-colors active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined" style={{fontSize:'20px'}}>refresh</span>
+              <span className="material-symbols-outlined" style={{fontSize:'18px'}}>refresh</span>
               Refresh Status
+            </button>
+            <button
+              onClick={async () => {
+                if (confirm("DEV RESET: Wipe all orders, payments & reset tables to zero?")) {
+                  const res = await fetch("/api/reset-demo", { method: "POST" });
+                  if (res.ok) {
+                    alert("System completely reset!");
+                    refetch();
+                  } else {
+                    alert("Failed to reset.");
+                  }
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-[#fff0ef] text-[#d32f2f] text-xs font-bold h-10 rounded-xl border border-red-200 hover:bg-red-100 transition-colors"
+            >
+              <span className="material-symbols-outlined" style={{fontSize:'18px'}}>delete_forever</span>
+              DEV RESET DATA
             </button>
           </div>
         </aside>

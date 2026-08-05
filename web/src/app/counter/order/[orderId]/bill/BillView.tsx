@@ -291,9 +291,14 @@ export function BillView({ orderId }: { orderId: string }) {
           onConfirm={async (method, amount, screenshotUrl) => {
             setError(null);
             try {
-              await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
+              const res = await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
               setPaidTotal(totals.total);
-              setPaid(true);
+              if (res.pending) {
+                alert("Payment submitted! Pending owner approval in Admin panel before closing bill.");
+                router.push("/counter");
+              } else {
+                setPaid(true);
+              }
             } catch (e) {
               setError((e as Error).message);
             }

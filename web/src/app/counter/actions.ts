@@ -188,8 +188,9 @@ interface PaymentInput {
 
 export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
   const supa = createAdminClient();
+  const hasPending = payments.some((p) => p.method === "jazzcash" || p.method === "easypaisa" || p.method === "card");
   const rows = payments.map((p) => {
-    const online = p.method === "jazzcash" || p.method === "easypaisa";
+    const online = p.method === "jazzcash" || p.method === "easypaisa" || p.method === "card";
     const status: PaymentStatus = online ? "pending" : "confirmed";
     return {
       order_id: orderId,
@@ -202,6 +203,12 @@ export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
   });
   const { error: pe } = await supa.from("payments").insert(rows);
   if (pe) throw new Error(pe.message);
+
+  if (hasPending) {
+    // Keep order open in pending_payment state until owner approves in Admin panel
+    await supa.from("orders").update({ status: "open" }).eq("id", orderId);
+    return { ok: true as const, pending: true as const };
+  }
 
   const { data: order, error: oe } = await supa
     .from("orders")
@@ -224,5 +231,5 @@ export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
       await supa.from("order_rounds").delete().eq("id", r.id);
     }
   }
-  return { ok: true as const };
+  return { ok: true as const, pending: false as const };
 }

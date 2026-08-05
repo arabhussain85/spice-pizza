@@ -52,9 +52,13 @@ export async function fetchTableGrid(supa: SupabaseClient): Promise<TableGridRow
     const o = byTable.get(table.id);
     if (!o) return { table, order: null };
     const rounds = o.order_rounds ?? [];
-    const lines = rounds.flatMap((r) => r.order_line_items ?? []);
+    const lines = rounds.flatMap((r) => r.order_line_items ?? []).filter((li) => !li.is_voided);
+    // If order has no non-voided items added yet, do NOT deem table occupied in the grid
+    if (lines.length === 0) {
+      return { table: { ...table, status: "free" }, order: null };
+    }
     return {
-      table,
+      table: { ...table, status: "occupied" },
       order: {
         id: o.id,
         order_number: o.order_number,
