@@ -1,37 +1,14 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
-// Thermal-receipt style page dimensions.
-const WIDTH_80MM = 226.77; // 80mm in pt
-const MARGIN = 12;
-const BRAND = rgb(0.86, 0.15, 0.15); // #dc2626
-const INK = rgb(0.07, 0.09, 0.15);
-const MUTED = rgb(0.42, 0.45, 0.5);
-
-export interface ReceiptRow {
-  qty?: number;
-  name: string;
-  sub?: string;
-  price?: string;
-}
-export interface ReceiptSection {
-  heading?: string;
-  rows: ReceiptRow[];
-}
-export interface ReceiptTotal {
-  label: string;
-  value: string;
-  bold?: boolean;
-}
-export interface ReceiptModel {
-  title: string;
-  subtitle?: string;
-  metaRight?: string;
-  address?: string;
-  phone?: string;
-  sections: ReceiptSection[];
-  totals?: ReceiptTotal[];
-  footer?: string;
-}
+// 80mm thermal-receipt renderers matching the Stitch kitchen + customer-bill slips.
+const W = 226.77; // 80mm in pt
+const M = 14; // side margin
+const LEFT = M;
+const RIGHT = W - M;
+const RED = rgb(0.686, 0.063, 0.102); // #af101a
+const INK = rgb(0.1, 0.09, 0.09);
+const MUTED = rgb(0.42, 0.35, 0.33);
+const RULE = rgb(0.72, 0.6, 0.58);
 
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = text.split(/\s+/);
@@ -42,145 +19,190 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
     if (font.widthOfTextAtSize(trial, size) > maxWidth && line) {
       lines.push(line);
       line = w;
-    } else {
-      line = trial;
-    }
+    } else line = trial;
   }
   if (line) lines.push(line);
   return lines.length ? lines : [""];
 }
 
-async function addReceiptPage(
-  doc: PDFDocument,
-  font: PDFFont,
-  bold: PDFFont,
-  model: ReceiptModel,
-) {
-  const CONTENT = WIDTH_80MM - MARGIN * 2;
-  // ---- measure height ----
-  let h = MARGIN + 22; // title
-  if (model.subtitle) h += 14;
-  if (model.address) h += 12;
-  if (model.phone) h += 12;
-  if (model.metaRight) h += 12;
-  h += 8;
-  for (const s of model.sections) {
-    if (s.heading) h += 16;
-    for (const r of s.rows) {
-      const nameLines = wrap(`${r.qty ? `${r.qty}x ` : ""}${r.name}`, font, 9, CONTENT - 46);
-      h += nameLines.length * 12;
-      if (r.sub) h += wrap(r.sub, font, 7.5, CONTENT - 46).length * 10;
-      h += 3;
-    }
-    h += 8;
-  }
-  if (model.totals?.length) h += 6 + model.totals.length * 15;
-  if (model.footer) h += 20;
-  h += MARGIN;
+type Draw = {
+  page: PDFPage;
+  left: (s: string, y: number, size: number, f: PDFFont, c?: ReturnType<typeof rgb>) => void;
+  right: (s: string, y: number, size: number, f: PDFFont, c?: ReturnType<typeof rgb>) => void;
+  center: (s: string, y: number, size: number, f: PDFFont, c?: ReturnType<typeof rgb>) => void;
+  at: (s: string, x: number, y: number, size: number, f: PDFFont, c?: ReturnType<typeof rgb>) => void;
+  dashed: (y: number) => void;
+  solid: (y: number) => void;
+};
 
-  const page = doc.addPage([WIDTH_80MM, Math.max(h, 160)]);
-  let y = page.getHeight() - MARGIN;
-
-  const text = (
-    p: PDFPage,
-    s: string,
-    x: number,
-    yy: number,
-    size: number,
-    f: PDFFont,
-    color = INK,
-  ) => p.drawText(s, { x, y: yy, size, font: f, color });
-
-  const rightText = (s: string, yy: number, size: number, f: PDFFont, color = INK) =>
-    text(page, s, WIDTH_80MM - MARGIN - f.widthOfTextAtSize(s, size), yy, size, f, color);
-
-  // ---- title & header ----
-  y -= 14;
-  text(page, model.title, MARGIN, y, 13, bold, BRAND);
-  y -= 14;
-  if (model.subtitle) {
-    text(page, model.subtitle, MARGIN, y, 8.5, font, MUTED);
-    y -= 12;
-  }
-  if (model.address) {
-    text(page, model.address, MARGIN, y, 8, font, INK);
-    y -= 11;
-  }
-  if (model.phone) {
-    text(page, `Tel: ${model.phone}`, MARGIN, y, 8, font, INK);
-    y -= 11;
-  }
-  if (model.metaRight) {
-    text(page, model.metaRight, MARGIN, y, 8, font, MUTED);
-    y -= 11;
-  }
-  const hr = () => {
-    page.drawLine({
-      start: { x: MARGIN, y },
-      end: { x: WIDTH_80MM - MARGIN, y },
-      thickness: 0.5,
-      color: rgb(0.85, 0.85, 0.82),
-    });
-    y -= 8;
+function drawing(page: PDFPage): Draw {
+  const at: Draw["at"] = (s, x, y, size, f, c = INK) => page.drawText(s, { x, y, size, font: f, color: c });
+  return {
+    page,
+    at,
+    left: (s, y, size, f, c) => at(s, LEFT, y, size, f, c),
+    right: (s, y, size, f, c) => at(s, RIGHT - f.widthOfTextAtSize(s, size), y, size, f, c),
+    center: (s, y, size, f, c) => at(s, (W - f.widthOfTextAtSize(s, size)) / 2, y, size, f, c),
+    dashed: (y) =>
+      page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 0.8, color: RULE, dashArray: [2, 2] }),
+    solid: (y) => page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 1.2, color: INK }),
   };
-  y -= 2;
-  hr();
+}
 
-  // ---- sections ----
-  for (const s of model.sections) {
-    if (s.heading) {
-      text(page, s.heading.toUpperCase(), MARGIN, y, 8, bold, MUTED);
-      y -= 14;
-    }
-    for (const r of s.rows) {
-      const label = `${r.qty ? `${r.qty}x ` : ""}${r.name}`;
-      const nameLines = wrap(label, font, 9, CONTENT - 46);
-      nameLines.forEach((ln, i) => {
-        text(page, ln, MARGIN, y, 9, bold);
-        if (i === 0 && r.price) rightText(r.price, y, 9, bold);
-        y -= 12;
-      });
-      if (r.sub) {
-        for (const sl of wrap(r.sub, font, 7.5, CONTENT - 46)) {
-          text(page, sl, MARGIN + 4, y, 7.5, font, MUTED);
-          y -= 10;
-        }
+// ---------------------------------------------------------------------------
+// Customer bill
+// ---------------------------------------------------------------------------
+export interface BillItem {
+  qty: number;
+  name: string;
+  sub?: string | null;
+  price: string;
+}
+export interface BillSlip {
+  brand: string;
+  branch?: string;
+  phone?: string;
+  date: string;
+  time: string;
+  orderNumber: string;
+  table: string;
+  items: BillItem[];
+  subtotal: string;
+  charges: { label: string; value: string }[];
+  total: string;
+  footer1?: string;
+  footer2?: string;
+}
+
+const QTY_X = 150;
+const NAME_MAX = QTY_X - LEFT - 6;
+
+export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // measure
+  let h = M + 24 + 12 + 12 + 6 + 24 + 8 + 16 + 8;
+  for (const it of slip.items) {
+    h += Math.max(1, wrap(it.name, bold, 9, NAME_MAX).length) * 12 + (it.sub ? 10 : 0) + 6;
+  }
+  h += 8 + (1 + slip.charges.length) * 13 + 8 + 30 + 8 + 26;
+  const page = doc.addPage([W, Math.max(h, 260)]);
+  const d = drawing(page);
+  let y = page.getHeight() - M;
+
+  // header
+  y -= 16;
+  d.center(slip.brand.toUpperCase(), y, 17, bold, RED);
+  y -= 14;
+  if (slip.branch) { d.center(slip.branch, y, 8.5, font, MUTED); y -= 11; }
+  if (slip.phone) { d.center(slip.phone, y, 8.5, font, MUTED); y -= 11; }
+  y -= 8;
+
+  // meta rows
+  d.left(`Date: ${slip.date}`, y, 8, font, MUTED);
+  d.right(`Bill #${slip.orderNumber}`, y, 8, font, MUTED);
+  y -= 11;
+  d.left(`Time: ${slip.time}`, y, 8, font, MUTED);
+  d.at("Table ", RIGHT - bold.widthOfTextAtSize(slip.table, 8) - font.widthOfTextAtSize("Table ", 8), y, 8, font, MUTED);
+  d.right(slip.table, y, 8, bold, RED);
+  y -= 10;
+  d.dashed(y); y -= 12;
+
+  // column heads
+  d.left("ITEM", y, 8, bold, INK);
+  d.at("QTY", QTY_X, y, 8, bold, INK);
+  d.right("PRICE", y, 8, bold, INK);
+  y -= 8;
+  d.dashed(y); y -= 14;
+
+  // items
+  for (const it of slip.items) {
+    const lines = wrap(it.name, bold, 9, NAME_MAX);
+    lines.forEach((ln, i) => {
+      d.left(ln, y, 9, bold, INK);
+      if (i === 0) {
+        d.at(String(it.qty), QTY_X + 4, y, 9, font, INK);
+        d.right(it.price, y, 9, font, INK);
       }
-      y -= 3;
-    }
+      y -= 12;
+    });
+    if (it.sub) { d.left(it.sub, y, 7.5, font, MUTED); y -= 10; }
     y -= 4;
   }
 
-  // ---- totals ----
-  if (model.totals?.length) {
-    hr();
-    for (const t of model.totals) {
-      const f = t.bold ? bold : font;
-      const size = t.bold ? 11 : 9;
-      text(page, t.label, MARGIN, y, size, f, t.bold ? INK : MUTED);
-      rightText(t.value, y, size, f, t.bold ? BRAND : INK);
-      y -= t.bold ? 16 : 14;
-    }
-  }
+  y -= 2; d.dashed(y); y -= 12;
+  d.left("Subtotal", y, 9, font, MUTED); d.right(slip.subtotal, y, 9, font, INK); y -= 13;
+  for (const c of slip.charges) { d.left(c.label, y, 9, font, MUTED); d.right(c.value, y, 9, font, INK); y -= 13; }
+  y -= 2; d.solid(y); y -= 22;
+  d.left("TOTAL", y, 13, bold, INK);
+  d.right(slip.total, y, 20, bold, RED);
+  y -= 22; d.dashed(y); y -= 16;
+  d.center(slip.footer1 ?? "THANK YOU FOR VISITING!", y, 9, bold, INK); y -= 12;
+  if (slip.footer2) d.center(slip.footer2, y, 7.5, font, MUTED);
 
-  if (model.footer) {
-    y -= 6;
-    const fl = wrap(model.footer, font, 7.5, CONTENT);
-    for (const ln of fl) {
-      text(page, ln, MARGIN, y, 7.5, font, MUTED);
-      y -= 10;
-    }
-  }
-}
-
-export async function renderReceipts(models: ReceiptModel[]): Promise<Uint8Array> {
-  const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Courier);
-  const bold = await doc.embedFont(StandardFonts.CourierBold);
-  for (const m of models) await addReceiptPage(doc, font, bold, m);
   return doc.save();
 }
 
-export async function renderReceipt(model: ReceiptModel): Promise<Uint8Array> {
-  return renderReceipts([model]);
+// ---------------------------------------------------------------------------
+// Kitchen order (monospace)
+// ---------------------------------------------------------------------------
+export interface KitchenItem {
+  qty: number;
+  name: string;
+  modifiers?: string[];
+  contents?: string[];
+}
+export interface KitchenSlip {
+  table: string;
+  orderNumber: string;
+  time: string;
+  items: KitchenItem[];
+}
+
+export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Courier);
+  const bold = await doc.embedFont(StandardFonts.CourierBold);
+
+  let h = M + 26 + 16 + 12;
+  for (const it of slip.items) {
+    h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT).length) * 13;
+    h += (it.modifiers?.length ?? 0) * 12 + (it.contents?.length ?? 0) * 12 + 6;
+  }
+  h += 12 + 26 + M;
+  const page = doc.addPage([W, Math.max(h, 220)]);
+  const d = drawing(page);
+  let y = page.getHeight() - M;
+
+  y -= 18;
+  d.center("KITCHEN ORDER", y, 14, bold, INK);
+  y -= 18;
+  d.left(slip.table, y, 10, bold, INK);
+  d.center(`Order #${slip.orderNumber}`, y, 9, font, INK);
+  d.right(slip.time, y, 9, font, INK);
+  y -= 8; d.dashed(y); y -= 16;
+
+  for (const it of slip.items) {
+    for (const ln of wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT)) {
+      d.left(ln, y, 10, bold, INK);
+      y -= 13;
+    }
+    for (const m of it.modifiers ?? []) {
+      d.at(`*** ${m.toUpperCase()} ***`, LEFT + 12, y, 9, bold, RED);
+      y -= 12;
+    }
+    for (const c of it.contents ?? []) {
+      d.at(`- ${c}`, LEFT + 12, y, 9, font, INK);
+      y -= 12;
+    }
+    y -= 6;
+  }
+
+  d.dashed(y); y -= 16;
+  d.center("*** SPICE PIZZA KITCHEN ***", y, 9, bold, INK); y -= 12;
+  d.center("End of Order", y, 8, font, MUTED);
+
+  return doc.save();
 }
