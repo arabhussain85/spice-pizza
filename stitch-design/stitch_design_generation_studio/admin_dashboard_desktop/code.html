@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Spice Pizza Admin - Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#fff0ef",
+                        "on-background": "#271816",
+                        "surface-bright": "#fff8f7",
+                        "charcoal-text": "#1A1A1A",
+                        "outline": "#8f6f6c",
+                        "surface-container-high": "#ffe2de",
+                        "background": "#fff8f7",
+                        "surface-variant": "#f9dcd9",
+                        "tertiary": "#51595b",
+                        "primary-fixed": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#41484a",
+                        "tertiary-fixed-dim": "#c1c8ca",
+                        "primary-container": "#d32f2f",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#5b403d",
+                        "surface-container": "#ffe9e7",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#3e2c2a",
+                        "status-occupied": "#D32F2F",
+                        "on-primary-fixed-variant": "#930010",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#af101a",
+                        "secondary-fixed-dim": "#c9c6c1",
+                        "status-pending": "#FFA000",
+                        "secondary-fixed": "#e6e2dd",
+                        "outline-variant": "#e4beba",
+                        "cream-bg": "#FCF9F5",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#dde4e6",
+                        "on-tertiary-fixed": "#161d1f",
+                        "surface": "#fff8f7",
+                        "on-secondary-fixed-variant": "#484743",
+                        "surface-tint": "#ba1a20",
+                        "inverse-on-surface": "#ffedeb",
+                        "on-primary-container": "#fff2f0",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#666460",
+                        "inverse-primary": "#ffb3ac",
+                        "secondary-container": "#e6e2dd",
+                        "on-secondary-fixed": "#1c1c19",
+                        "surface-dim": "#f1d3d0",
+                        "tertiary-container": "#6a7173",
+                        "surface-container-highest": "#f9dcd9",
+                        "status-free": "#2E7D32",
+                        "primary-fixed-dim": "#ffb3ac",
+                        "on-tertiary-container": "#eff6f8",
+                        "secondary": "#605e5b",
+                        "on-error": "#ffffff",
+                        "on-surface": "#271816",
+                        "on-primary-fixed": "#410003"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "touch-target": "48px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "display-price": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-price": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.surface-container-low');
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.secondary-fixed-dim');
+            border-radius: theme('borderRadius.full');
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.secondary');
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface h-full flex flex-col md:flex-row overflow-hidden">
+<!-- Desktop SideNavBar (from JSON) -->
+<aside class="hidden md:flex flex-col h-screen w-64 docked left-0 bg-surface-container-low border-r border-outline-variant shadow-md py-unit shrink-0">
+<!-- Header -->
+<div class="px-margin-mobile pb-6 pt-4 flex flex-col gap-2 border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<img alt="Spice Pizza Logo" class="w-10 h-10 rounded-full object-cover shadow-sm bg-surface-bright" data-alt="A clean, minimalist flat vector logo for a high-end pizzeria named Spice Pizza. The logo features a stylized, warm red flame subtlely shaped like a pizza slice against a crisp white background. Modern, upscale-casual aesthetic suitable for a sleek web application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD54-bJ7o_7Vmd3QKmUYjaJKr4W7uOTVmdJcFS23zkYUaaFPNuk9vzmVMFg306HwUWaArYDJS2OBD7H1DpyiIJ-AL19xiHIgSlhf_X-QnWi1gcvF6Np13Y8Nb8gZcl1FeWoKWPqP-ouv_mij-qw_zLij8o01XI5ummoliAZxdzci_j3L8Ce450DIiydVPoY_w3Snw78ueBvLx4-yUE17vNWCkNGg0U48QKwjzAm5AN8dcfwB8e3p102"/>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-black text-primary">Spice Pizza Admin</span>
+<span class="font-label-sm text-label-sm text-secondary">Main Branch</span>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1">
+<!-- Active Tab: Dashboard -->
+<a class="bg-primary-container text-on-primary-container rounded-lg mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all active:translate-x-1 duration-200 group relative" href="#">
+<span class="material-symbols-outlined text-primary group-hover:text-primary transition-colors" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-bold text-label-bold">Dashboard</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all active:translate-x-1 duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">analytics</span>
+<span class="font-label-bold text-label-bold">Analytics</span>
+</a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all active:translate-x-1 duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">group</span>
+<span class="font-label-bold text-label-bold">Staff</span>
+</a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all active:translate-x-1 duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">restaurant_menu</span>
+<span class="font-label-bold text-label-bold">Menu Editor</span>
+</a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all active:translate-x-1 duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">settings</span>
+<span class="font-label-bold text-label-bold">Settings</span>
+</a>
+</nav>
+<!-- CTA & Footer -->
+<div class="px-margin-mobile pt-4 pb-2 flex flex-col gap-2 border-t border-outline-variant">
+<button class="bg-primary text-on-primary font-label-bold text-label-bold rounded-full py-3 px-4 w-full flex items-center justify-center gap-2 hover:bg-on-primary-fixed-variant transition-colors shadow-md active:scale-95 duration-100 min-h-touch-target">
+<span class="material-symbols-outlined text-sm">download</span>
+                Export Reports
+            </button>
+<nav class="flex flex-col gap-1 mt-2">
+<a class="text-on-surface-variant mx-2 my-1 px-2 py-2 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-secondary">help</span>
+<span class="font-label-bold text-label-bold">Help</span>
+</a>
+<a class="text-on-surface-variant mx-2 my-1 px-2 py-2 flex items-center gap-3 rounded-lg hover:bg-surface-variant transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-error">logout</span>
+<span class="font-label-bold text-label-bold">Logout</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-background">
+<!-- Mobile TopAppBar (Simplified for demo, hidden on md) -->
+<header class="md:hidden flex items-center justify-between px-margin-mobile h-16 bg-surface-bright shadow-sm z-10 border-b border-outline-variant">
+<span class="font-headline-md text-headline-md font-bold text-primary">Spice Pizza</span>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</header>
+<!-- Scrollable Dashboard Content -->
+<div class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop scroll-smooth">
+<!-- Page Header -->
+<div class="mb-gutter flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-charcoal-text">Today's Overview</h1>
+<p class="font-body-md text-body-md text-secondary mt-1">Live metrics for main branch.</p>
+</div>
+<div class="flex items-center gap-2 text-secondary bg-surface-container-low px-4 py-2 rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="font-label-bold text-label-bold">Today, Oct 24</span>
+</div>
+</div>
+<!-- Metrics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
+<!-- Hero Metric: Revenue -->
+<div class="col-span-1 md:col-span-6 bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-shadow">
+<!-- Subtle background decoration -->
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-surface-container-high rounded-full opacity-50 mix-blend-multiply pointer-events-none group-hover:scale-110 transition-transform duration-500"></div>
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div class="flex items-start justify-between mb-4">
+<span class="font-label-bold text-label-bold text-secondary uppercase tracking-wider">Gross Revenue</span>
+<div class="bg-primary-container text-on-primary-container p-2 rounded-lg">
+<span class="material-symbols-outlined">payments</span>
+</div>
+</div>
+<div>
+<span class="font-display-price text-display-price text-primary block mb-1">Rs. 42,850</span>
+<div class="flex items-center gap-1 text-status-free font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+12.5% vs yesterday</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Metrics Stack -->
+<div class="col-span-1 md:col-span-3 flex flex-col gap-gutter">
+<!-- Orders -->
+<div class="bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-5 flex-1 flex flex-col justify-center">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary">receipt_long</span>
+<span class="font-label-bold text-label-bold text-secondary">Total Orders</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-charcoal-text">84</span>
+</div>
+<!-- AOV -->
+<div class="bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-5 flex-1 flex flex-col justify-center">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary">shopping_bag</span>
+<span class="font-label-bold text-label-bold text-secondary">Avg Order Value</span>
+</div>
+<span class="font-headline-md text-headline-md text-charcoal-text">Rs. 510</span>
+</div>
+</div>
+<!-- Tables Occupied -->
+<div class="col-span-1 md:col-span-3 bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-5 flex flex-col justify-between">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary">grid_view</span>
+<span class="font-label-bold text-label-bold text-secondary">Tables Occupied</span>
+</div>
+<div class="flex items-end gap-2 mb-4">
+<span class="font-display-price text-display-price text-charcoal-text leading-none">3</span>
+<span class="font-headline-md text-headline-md text-secondary leading-none mb-1">/ 6</span>
+</div>
+<!-- Visual indicator -->
+<div class="flex gap-2 w-full h-3">
+<div class="flex-1 bg-status-occupied rounded-full shadow-[0_2px_4px_rgba(211,47,47,0.3)]"></div>
+<div class="flex-1 bg-status-occupied rounded-full shadow-[0_2px_4px_rgba(211,47,47,0.3)]"></div>
+<div class="flex-1 bg-status-occupied rounded-full shadow-[0_2px_4px_rgba(211,47,47,0.3)]"></div>
+<div class="flex-1 bg-surface-container-high rounded-full border border-outline-variant"></div>
+<div class="flex-1 bg-surface-container-high rounded-full border border-outline-variant"></div>
+<div class="flex-1 bg-surface-container-high rounded-full border border-outline-variant"></div>
+</div>
+</div>
+</section>
+<!-- Bottom Section: Tables & Recent Bills -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Live Table Grid -->
+<section class="xl:col-span-7 bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-6">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline-md text-headline-md text-charcoal-text">Live Floor Plan</h2>
+<button class="text-primary font-label-bold text-label-bold hover:underline flex items-center gap-1">
+                            View All <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<!-- Table 1 - Occupied -->
+<div class="bg-surface-container-lowest border border-status-occupied rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] relative overflow-hidden bg-opacity-10" style="background-color: rgba(211, 47, 47, 0.05);">
+<div class="absolute top-2 right-2 flex items-center justify-center w-6 h-6 bg-status-occupied text-white rounded-full">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+</div>
+<span class="font-headline-md text-headline-md text-charcoal-text mb-1">T1</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-bright px-2 py-1 rounded-full border border-outline-variant">45m elapsed</span>
+</div>
+<!-- Table 2 - Occupied -->
+<div class="bg-surface-container-lowest border border-status-occupied rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] relative overflow-hidden bg-opacity-10" style="background-color: rgba(211, 47, 47, 0.05);">
+<div class="absolute top-2 right-2 flex items-center justify-center w-6 h-6 bg-status-occupied text-white rounded-full">
+<span class="material-symbols-outlined text-[14px]">restaurant</span>
+</div>
+<span class="font-headline-md text-headline-md text-charcoal-text mb-1">T2</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-bright px-2 py-1 rounded-full border border-outline-variant">Serving</span>
+</div>
+<!-- Table 3 - Free -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] border-dashed">
+<span class="material-symbols-outlined text-status-free mb-1 text-[28px] opacity-70">event_seat</span>
+<span class="font-headline-md text-headline-md text-secondary">T3</span>
+<span class="font-label-sm text-label-sm text-status-free">Available</span>
+</div>
+<!-- Table 4 - Free -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] border-dashed">
+<span class="material-symbols-outlined text-status-free mb-1 text-[28px] opacity-70">event_seat</span>
+<span class="font-headline-md text-headline-md text-secondary">T4</span>
+<span class="font-label-sm text-label-sm text-status-free">Available</span>
+</div>
+<!-- Table 5 - Pending/Bill requested -->
+<div class="bg-surface-container-lowest border border-status-pending rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] relative overflow-hidden bg-opacity-10" style="background-color: rgba(255, 160, 0, 0.05);">
+<div class="absolute top-2 right-2 flex items-center justify-center w-6 h-6 bg-status-pending text-white rounded-full">
+<span class="material-symbols-outlined text-[14px]">receipt</span>
+</div>
+<span class="font-headline-md text-headline-md text-charcoal-text mb-1">T5</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-bright px-2 py-1 rounded-full border border-outline-variant">Bill Req.</span>
+</div>
+<!-- Table 6 - Free -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-colors min-h-[120px] border-dashed">
+<span class="material-symbols-outlined text-status-free mb-1 text-[28px] opacity-70">event_seat</span>
+<span class="font-headline-md text-headline-md text-secondary">T6</span>
+<span class="font-label-sm text-label-sm text-status-free">Available</span>
+</div>
+</div>
+</section>
+<!-- Recent Closed Bills -->
+<section class="xl:col-span-5 bg-surface-bright rounded-xl border border-outline-variant shadow-sm p-6 flex flex-col">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-headline-md text-headline-md text-charcoal-text">Recent Bills</h2>
+<span class="material-symbols-outlined text-secondary">receipt_long</span>
+</div>
+<div class="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[350px] pr-2">
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary font-label-bold group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+                                    #84
+                                </div>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold text-charcoal-text">Table 2</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 14:32
+                                    </span>
+</div>
+</div>
+<span class="font-body-md text-body-md font-semibold text-charcoal-text">Rs. 1,240</span>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary font-label-bold group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+                                    #83
+                                </div>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold text-charcoal-text">Takeaway</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 14:15
+                                    </span>
+</div>
+</div>
+<span class="font-body-md text-body-md font-semibold text-charcoal-text">Rs. 850</span>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary font-label-bold group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+                                    #82
+                                </div>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold text-charcoal-text">Table 6</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 13:45
+                                    </span>
+</div>
+</div>
+<span class="font-body-md text-body-md font-semibold text-charcoal-text">Rs. 2,100</span>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary font-label-bold group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+                                    #81
+                                </div>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold text-charcoal-text">Table 1</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 13:10
+                                    </span>
+</div>
+</div>
+<span class="font-body-md text-body-md font-semibold text-charcoal-text">Rs. 620</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Bottom padding for mobile nav -->
+<div class="h-24 md:h-8"></div>
+</div>
+</main>
+<!-- Mobile BottomNavBar (from JSON) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-margin-mobile py-2 bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.1)] rounded-t-xl z-50">
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-container-high rounded-full transition-colors active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary mb-1 text-[24px]">grid_view</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Tables</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-container-high rounded-full transition-colors active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary mb-1 text-[24px]">receipt_long</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-1 hover:bg-surface-container-high rounded-full transition-colors active:scale-90 duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary mb-1 text-[24px]">menu_book</span>
+<span class="font-label-sm-mobile text-label-sm-mobile">Menu</span>
+</a>
+<!-- Active state for Admin context -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-6 py-1 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+<span class="font-label-sm-mobile text-label-sm-mobile font-bold">Admin</span>
+</a>
+</nav>
+</body></html>

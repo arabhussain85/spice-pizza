@@ -4,15 +4,30 @@ import { useTransition } from "react";
 import { signOut } from "@/app/auth/actions";
 import { cn } from "./ui";
 
-export function LogoutButton({ className }: { className?: string }) {
+export function LogoutButton({
+  className,
+  portal = "counter",
+  children,
+}: {
+  className?: string;
+  portal?: "admin" | "counter";
+  children?: React.ReactNode;
+}) {
   const [pending, start] = useTransition();
   return (
     <button
-      onClick={() => start(() => signOut())}
+      onClick={() => start(() => signOut(portal))}
       disabled={pending}
-      className={cn("text-sm font-medium text-muted hover:text-brand", className)}
+      className={cn(
+        "flex items-center gap-2 rounded-xl text-sm font-semibold px-3 py-2 transition-colors hover:bg-[#ffe9e7] hover:text-[#af101a]",
+        className
+      )}
+      style={{ color: pending ? "#8f6f6c" : undefined }}
     >
-      {pending ? "Signing out…" : "Sign out"}
+      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+        logout
+      </span>
+      {children ?? (pending ? "Signing out…" : "Sign out")}
     </button>
   );
 }

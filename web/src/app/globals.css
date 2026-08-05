@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* ============================================================
@@ -77,6 +76,75 @@
   --radius-card: 0.5rem;
 }
 
+/* ============================================================
+   Stitch design tokens (fonts, type scale, spacing, extra colors)
+   Enables porting the Stitch screen markup verbatim.
+   ============================================================ */
+@theme {
+  /* type families */
+  --font-display-price: "Hanken Grotesk", sans-serif;
+  --font-label-bold: "Hanken Grotesk", sans-serif;
+  --font-label-sm: "Hanken Grotesk", sans-serif;
+  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
+  --font-headline-md: "Plus Jakarta Sans", sans-serif;
+  --font-headline-sm: "Plus Jakarta Sans", sans-serif;
+  --font-body-lg: "Plus Jakarta Sans", sans-serif;
+  --font-body-md: "Plus Jakarta Sans", sans-serif;
+
+  /* type scale (size + line-height + weight + tracking) */
+  --text-display-price: 40px;
+  --text-display-price--line-height: 48px;
+  --text-display-price--font-weight: 700;
+  --text-display-price--letter-spacing: -0.02em;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-label-bold: 14px;
+  --text-label-bold--line-height: 20px;
+  --text-label-bold--font-weight: 600;
+  --text-label-bold--letter-spacing: 0.05em;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 500;
+
+  /* 8px spacing scale + named gutters */
+  --spacing-unit: 8px;
+  --spacing-gutter: 24px;
+  --spacing-margin-desktop: 40px;
+  --spacing-margin-mobile: 16px;
+  --spacing-touch-target: 48px;
+
+  /* radii to match Stitch screen configs */
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* extra color aliases used verbatim by Stitch markup */
+  --color-cream-bg: #fcf9f5;
+  --color-charcoal-text: #1a1a1a;
+  --color-on-secondary: #ffffff;
+  --color-inverse-surface: #3e2c2a;
+  --color-inverse-on-surface: #ffedeb;
+  --color-inverse-primary: #ffb3ac;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-tertiary-container: #6a7173;
+  --color-on-tertiary-container: #eff6f8;
+  --color-primary-fixed: #ffdad6;
+  --color-on-primary-fixed: #410003;
+}
+
 /* --- Base Styles --- */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -91,23 +159,29 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* --- Material Symbols --- */
+/* --- Material Symbols Outlined (font loaded via <link> in layout.tsx head) --- */
 .material-symbols-outlined {
-  font-family: "Material Symbols Outlined";
+  font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
+  font-size: 24px; /* Preferred icon size */
   display: inline-block;
-  white-space: nowrap;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
   word-wrap: normal;
+  white-space: nowrap;
   direction: ltr;
+  /* Support for all WebKit browsers. */
   -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
   text-rendering: optimizeLegibility;
+  /* Support for Firefox. */
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "liga";
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+  /* Allow size overrides via Tailwind text-* */
+  font-size: inherit;
 }
 
 /* --- Scrollbars --- */

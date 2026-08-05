@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Spice Pizza - Order History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#dde4e6",
+                      "secondary-container": "#e6e2dd",
+                      "surface-container-highest": "#f9dcd9",
+                      "status-occupied": "#D32F2F",
+                      "surface": "#fff8f7",
+                      "inverse-primary": "#ffb3ac",
+                      "on-secondary-container": "#666460",
+                      "on-surface": "#271816",
+                      "surface-tint": "#ba1a20",
+                      "on-secondary": "#ffffff",
+                      "cream-bg": "#FCF9F5",
+                      "inverse-on-surface": "#ffedeb",
+                      "tertiary": "#51595b",
+                      "status-pending": "#FFA000",
+                      "tertiary-container": "#6a7173",
+                      "primary": "#af101a",
+                      "on-primary-container": "#fff2f0",
+                      "on-surface-variant": "#5b403d",
+                      "primary-container": "#d32f2f",
+                      "background": "#fff8f7",
+                      "primary-fixed-dim": "#ffb3ac",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#f9dcd9",
+                      "surface-container-low": "#fff0ef",
+                      "charcoal-text": "#1A1A1A",
+                      "tertiary-fixed-dim": "#c1c8ca",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#1c1c19",
+                      "surface-container": "#ffe9e7",
+                      "surface-dim": "#f1d3d0",
+                      "status-free": "#2E7D32",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#41484a",
+                      "secondary": "#605e5b",
+                      "on-tertiary-fixed": "#161d1f",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#930010",
+                      "surface-container-high": "#ffe2de",
+                      "surface-bright": "#fff8f7",
+                      "secondary-fixed": "#e6e2dd",
+                      "on-primary-fixed": "#410003",
+                      "on-background": "#271816",
+                      "primary-fixed": "#ffdad6",
+                      "on-secondary-fixed-variant": "#484743",
+                      "error": "#ba1a1a",
+                      "inverse-surface": "#3e2c2a",
+                      "secondary-fixed-dim": "#c9c6c1",
+                      "on-tertiary-container": "#eff6f8",
+                      "on-error": "#ffffff",
+                      "outline": "#8f6f6c",
+                      "outline-variant": "#e4beba",
+                      "surface-container-lowest": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "unit": "8px",
+                      "touch-target": "48px",
+                      "margin-desktop": "40px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "label-bold": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-price": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "label-bold": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-price": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md h-screen flex flex-col md:hidden">
+<!-- Header -->
+<header class="bg-surface-bright px-margin-mobile py-4 flex justify-between items-center shadow-sm sticky top-0 z-40 border-b border-outline-variant">
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Order History</h1>
+<p class="text-secondary font-label-sm text-label-sm mt-1">Today's Transactions</p>
+</div>
+<button class="h-touch-target w-touch-target flex items-center justify-center rounded-full bg-surface-container-highest text-primary hover:bg-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile py-unit pb-[100px] space-y-4">
+<!-- Search Bar -->
+<div class="relative w-full mb-6">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary" data-icon="search">search</span>
+<input class="w-full h-touch-target pl-12 pr-4 bg-white border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-body-md text-body-md shadow-sm placeholder:text-secondary-fixed-dim" placeholder="Search orders by ID or Table..." type="text"/>
+</div>
+<!-- Filter Chips -->
+<div class="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-margin-mobile px-margin-mobile">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-bold text-label-bold whitespace-nowrap shadow-sm active:scale-95 transition-transform">All Orders</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface rounded-full font-label-bold text-label-bold whitespace-nowrap border border-outline-variant hover:bg-surface-variant active:scale-95 transition-colors">Completed</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface rounded-full font-label-bold text-label-bold whitespace-nowrap border border-outline-variant hover:bg-surface-variant active:scale-95 transition-colors">Voided</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface rounded-full font-label-bold text-label-bold whitespace-nowrap border border-outline-variant hover:bg-surface-variant active:scale-95 transition-colors">Refunded</button>
+</div>
+<!-- Date Header -->
+<h2 class="font-label-bold text-label-bold text-secondary mt-6 mb-2">Today, Oct 24</h2>
+<!-- Order Cards List -->
+<!-- Card 1 -->
+<div class="bg-white rounded-lg border border-[#E0DCD6] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md text-on-surface block">#1042</span>
+<span class="font-label-sm text-label-sm text-secondary block mt-1">12:45 PM • Table 4</span>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-bold text-primary block">$45.50</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-status-free font-label-sm text-label-sm mt-1 border border-[#E0DCD6]">
+<span class="w-2 h-2 rounded-full bg-status-free mr-1"></span> Paid
+                    </span>
+</div>
+</div>
+<div class="flex gap-2 mt-4 pt-3 border-t border-surface-variant overflow-x-hidden">
+<span class="text-secondary font-label-sm text-label-sm truncate">1x Margherita, 2x Garlic Knots, 2x Cola</span>
+<span class="material-symbols-outlined text-secondary ml-auto" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-lg border border-[#E0DCD6] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md text-on-surface block">#1041</span>
+<span class="font-label-sm text-label-sm text-secondary block mt-1">12:15 PM • Takeout</span>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-bold text-primary block">$28.00</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-status-free font-label-sm text-label-sm mt-1 border border-[#E0DCD6]">
+<span class="w-2 h-2 rounded-full bg-status-free mr-1"></span> Paid
+                    </span>
+</div>
+</div>
+<div class="flex gap-2 mt-4 pt-3 border-t border-surface-variant overflow-x-hidden">
+<span class="text-secondary font-label-sm text-label-sm truncate">1x Pepperoni, 1x Caesar Salad</span>
+<span class="material-symbols-outlined text-secondary ml-auto" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white rounded-lg border border-[#E0DCD6] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer active:scale-[0.98] transition-transform opacity-75">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md text-on-surface line-through block">#1040</span>
+<span class="font-label-sm text-label-sm text-secondary block mt-1">11:50 AM • Table 2</span>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-bold text-secondary line-through block">$12.00</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-error font-label-sm text-label-sm mt-1 border border-[#E0DCD6]">
+<span class="w-2 h-2 rounded-full bg-error mr-1"></span> Voided
+                    </span>
+</div>
+</div>
+<div class="flex gap-2 mt-4 pt-3 border-t border-surface-variant overflow-x-hidden">
+<span class="text-secondary font-label-sm text-label-sm truncate">1x Cheese Slice, 1x Water</span>
+<span class="material-symbols-outlined text-secondary ml-auto" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Date Header -->
+<h2 class="font-label-bold text-label-bold text-secondary mt-8 mb-2">Yesterday, Oct 23</h2>
+<!-- Card 4 -->
+<div class="bg-white rounded-lg border border-[#E0DCD6] p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md text-on-surface block">#1039</span>
+<span class="font-label-sm text-label-sm text-secondary block mt-1">9:30 PM • Table 12</span>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-bold text-primary block">$85.20</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-status-free font-label-sm text-label-sm mt-1 border border-[#E0DCD6]">
+<span class="w-2 h-2 rounded-full bg-status-free mr-1"></span> Paid
+                    </span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-margin-mobile py-2 bg-surface-container-lowest dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(0,0,0,0.1)] rounded-t-xl z-50">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container active:scale-90 transition-transform duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-label-sm-mobile text-label-sm-mobile mt-1">Tables</span>
+</a>
+<!-- Active Tab: Orders -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-6 py-1 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-sm-mobile text-label-sm-mobile mt-1 font-bold">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container active:scale-90 transition-transform duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-sm-mobile text-label-sm-mobile mt-1">Menu</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container active:scale-90 transition-transform duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="font-label-sm-mobile text-label-sm-mobile mt-1">Admin</span>
+</a>
+</nav>
+<style>
+        /* Hide scrollbar for filter chips while keeping functionality */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

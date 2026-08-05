@@ -7,6 +7,7 @@ import { fetchToday, type TodayData } from "@/lib/admin-queries";
 import { formatRs } from "@/lib/money";
 import { formatClock, formatLongDate, greeting } from "@/lib/time";
 import { Avatar, Card, Pill, StatCard, Button } from "@/components/ui";
+import { Icon } from "@/components/Icon";
 
 export default function AdminTodayPage() {
   const supaRef = useRef(createClient());
@@ -98,51 +99,69 @@ export default function AdminTodayPage() {
               </span>
             )}
           </div>
-          <Link href="/admin/reports" className="font-bold hover:underline">
-            View Analytics →
+          <Link href="/admin/reports" className="font-bold hover:underline flex items-center gap-1">
+            View Analytics <Icon name="arrow_forward" className="text-sm" />
           </Link>
         </div>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard
-          title="Orders Today"
-          value={data?.orderCount ?? 0}
-          subtext={`Avg ticket: ${formatRs(data?.avgOrder ?? 0)}`}
-          icon="📦"
-        />
-        <StatCard
-          title="Active Occupancy"
-          value={`${data?.tablesOccupied ?? 0} / ${data?.tablesTotal ?? 0}`}
-          subtext={`${(data?.tablesTotal ?? 0) - (data?.tablesOccupied ?? 0)} tables available for guests`}
-          icon="🪑"
-        />
+        <Card className="p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#ffe9e7] text-[#af101a] flex items-center justify-center shrink-0">
+            <Icon name="receipt_long" className="text-2xl" />
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-[#605e5b]">Orders Today</div>
+            <div className="text-2xl font-black text-[#1A1A1A] mt-0.5">{data?.orderCount ?? 0}</div>
+            <div className="text-xs text-[#605e5b]">Avg ticket: {formatRs(data?.avgOrder ?? 0)}</div>
+          </div>
+        </Card>
+        <Card className="p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#ffe9e7] text-[#af101a] flex items-center justify-center shrink-0">
+            <Icon name="grid_view" className="text-2xl" />
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-[#605e5b]">Active Occupancy</div>
+            <div className="text-2xl font-black text-[#1A1A1A] mt-0.5">
+              {data?.tablesOccupied ?? 0} / {data?.tablesTotal ?? 0}
+            </div>
+            <div className="text-xs text-[#605e5b]">
+              {(data?.tablesTotal ?? 0) - (data?.tablesOccupied ?? 0)} tables available
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Quick Action Navigation Buttons */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Link href="/admin/discounts">
+          <Card className="p-4 flex flex-col items-center justify-center text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
+            <Icon name="local_offer" className="text-2xl text-[#af101a] mb-1" />
+            <div className="text-xs font-bold text-ink">Discounts &amp; Fees</div>
+          </Card>
+        </Link>
         <Link href="/admin/settings/receipt">
-          <Card className="p-4 text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
-            <div className="text-2xl mb-1">🧾</div>
+          <Card className="p-4 flex flex-col items-center justify-center text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
+            <Icon name="receipt" className="text-2xl text-[#af101a] mb-1" />
             <div className="text-xs font-bold text-ink">Receipt Customizer</div>
           </Card>
         </Link>
         <Link href="/admin/settings/printer">
-          <Card className="p-4 text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
-            <div className="text-2xl mb-1">🖨️</div>
+          <Card className="p-4 flex flex-col items-center justify-center text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
+            <Icon name="print" className="text-2xl text-[#af101a] mb-1" />
             <div className="text-xs font-bold text-ink">Printer Section</div>
           </Card>
         </Link>
         <Link href="/admin/menu">
-          <Card className="p-4 text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
-            <div className="text-2xl mb-1">🍕</div>
+          <Card className="p-4 flex flex-col items-center justify-center text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
+            <Icon name="restaurant_menu" className="text-2xl text-[#af101a] mb-1" />
             <div className="text-xs font-bold text-ink">Menu Editor</div>
           </Card>
         </Link>
         <Link href="/admin/payments">
-          <Card className="p-4 text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
-            <div className="text-2xl mb-1">💳</div>
+          <Card className="p-4 flex flex-col items-center justify-center text-center hover:border-brand/40 hover:bg-cream/40 transition-all cursor-pointer">
+            <Icon name="payments" className="text-2xl text-[#af101a] mb-1" />
             <div className="text-xs font-bold text-ink">Payment Approvals</div>
           </Card>
         </Link>

@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function signOut() {
+export async function signOut(portal: "admin" | "counter" = "admin") {
   const supa = await createClient();
   await supa.auth.signOut();
-  redirect("/login");
+  redirect(portal === "admin" ? "/login/admin" : "/login/counter");
 }

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin - Reports</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#dde4e6",
+                        "secondary-container": "#e6e2dd",
+                        "surface-container-highest": "#f9dcd9",
+                        "status-occupied": "#D32F2F",
+                        "surface": "#fff8f7",
+                        "inverse-primary": "#ffb3ac",
+                        "on-secondary-container": "#666460",
+                        "on-surface": "#271816",
+                        "surface-tint": "#ba1a20",
+                        "on-secondary": "#ffffff",
+                        "cream-bg": "#FCF9F5",
+                        "inverse-on-surface": "#ffedeb",
+                        "tertiary": "#51595b",
+                        "status-pending": "#FFA000",
+                        "tertiary-container": "#6a7173",
+                        "primary": "#af101a",
+                        "on-primary-container": "#fff2f0",
+                        "on-surface-variant": "#5b403d",
+                        "primary-container": "#d32f2f",
+                        "background": "#fff8f7",
+                        "primary-fixed-dim": "#ffb3ac",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#f9dcd9",
+                        "surface-container-low": "#fff0ef",
+                        "charcoal-text": "#1A1A1A",
+                        "tertiary-fixed-dim": "#c1c8ca",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1c1c19",
+                        "surface-container": "#ffe9e7",
+                        "surface-dim": "#f1d3d0",
+                        "status-free": "#2E7D32",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#41484a",
+                        "secondary": "#605e5b",
+                        "on-tertiary-fixed": "#161d1f",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#930010",
+                        "surface-container-high": "#ffe2de",
+                        "surface-bright": "#fff8f7",
+                        "secondary-fixed": "#e6e2dd",
+                        "on-primary-fixed": "#410003",
+                        "on-background": "#271816",
+                        "primary-fixed": "#ffdad6",
+                        "on-secondary-fixed-variant": "#484743",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#3e2c2a",
+                        "secondary-fixed-dim": "#c9c6c1",
+                        "on-tertiary-container": "#eff6f8",
+                        "on-error": "#ffffff",
+                        "outline": "#8f6f6c",
+                        "outline-variant": "#e4beba",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "unit": "8px",
+                        "touch-target": "48px",
+                        "margin-desktop": "40px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Hanken Grotesk"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-price": ["Hanken Grotesk"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "display-price": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low border-r border-outline-variant shadow-md h-screen w-64 flex-col py-unit hidden md:flex shrink-0">
+<!-- Header -->
+<div class="px-margin-desktop mb-8 mt-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A clean, modern logo for Spice Pizza featuring a stylized pizza slice graphic in bold primary red against a warm cream background, embodying an upscale-casual bistro vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCebEdQVxLDCv8DvQ0ugT1CeBw8C_rOsJUifuAnWRkz1ItU0vw8_fOrD1WIxqW3tD576MUQbbtZzxf_kHP63H9TYqTn5SVeUwnb3E4OmYrt1wdBeLv6rMT2Awhc4NVgerDNsMKIhJxClRZG683UXEiu7wtIQe-ugjnsniA1YTWsAHPPiJ8xvxOuOkqYVztz7nhwbANGlfIkdmyJjpeU0SXy0ua0Z08XMImZjzaIZl6ke1GI1YoEUlS5"/>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-primary">Spice Pizza Admin</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Main Branch</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-1 px-2">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<!-- Analytics (Active) -->
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg mx-2 my-1 p-3 transition-all font-label-bold text-label-bold active:translate-x-1 duration-200 shadow-sm" href="#">
+<span class="material-symbols-outlined fill" data-icon="analytics" data-weight="fill">analytics</span>
+                Analytics
+            </a>
+<!-- Staff (Inactive) -->
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Staff
+            </a>
+<!-- Menu Editor (Inactive) -->
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+                Menu Editor
+            </a>
+<!-- Settings (Inactive) -->
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</div>
+<!-- Footer -->
+<div class="px-2 mt-auto mb-4 border-t border-outline-variant pt-4 flex flex-col gap-1">
+<button class="bg-primary text-on-primary font-label-bold text-label-bold h-touch-target rounded-lg mx-2 my-2 shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
+                Export Reports
+            </button>
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-4 text-on-surface-variant mx-2 my-1 p-3 rounded-lg hover:bg-surface-variant transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 h-screen overflow-y-auto bg-cream-bg p-margin-desktop">
+<!-- Top Action Bar -->
+<header class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-charcoal-text">Analytics Overview</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Weekly performance metrics and trends.</p>
+</div>
+<!-- Date Picker -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg p-1 shadow-sm h-touch-target">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<div class="px-4 font-label-bold text-label-bold text-charcoal-text flex items-center gap-2 border-x border-outline-variant">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+                    Oct 16 - Oct 22, 2023
+                </div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</header>
+<!-- KPI Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-gutter">
+<!-- Revenue KPI -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[80px] text-primary">payments</span>
+</div>
+<h3 class="font-label-bold text-label-bold text-on-surface-variant mb-2">Total Revenue</h3>
+<div class="flex items-baseline gap-3">
+<span class="font-display-price text-display-price text-charcoal-text">Rs. 42,500</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-status-free font-label-sm text-label-sm bg-status-free/10 w-fit px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                    +12.5% vs last week
+                </div>
+</div>
+<!-- Total Orders KPI -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[80px] text-tertiary">receipt_long</span>
+</div>
+<h3 class="font-label-bold text-label-bold text-on-surface-variant mb-2">Total Orders</h3>
+<div class="flex items-baseline gap-3">
+<span class="font-display-price text-display-price text-charcoal-text">834</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-status-free font-label-sm text-label-sm bg-status-free/10 w-fit px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                    +5.2% vs last week
+                </div>
+</div>
+<!-- Avg Order Value KPI -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[80px] text-status-pending">shopping_basket</span>
+</div>
+<h3 class="font-label-bold text-label-bold text-on-surface-variant mb-2">Average Order Value</h3>
+<div class="flex items-baseline gap-3">
+<span class="font-display-price text-display-price text-charcoal-text">Rs. 510</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-status-occupied font-label-sm text-label-sm bg-status-occupied/10 w-fit px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+                    -1.1% vs last week
+                </div>
+</div>
+</section>
+<!-- Main Chart & Top Sellers Grid -->
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
+<!-- Revenue Chart Area -->
+<div class="xl:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-charcoal-text">Weekly Revenue</h3>
+<button class="text-primary hover:bg-surface-variant p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Chart Visual Representation (CSS Bar Chart) -->
+<div class="flex-1 flex items-end gap-2 sm:gap-4 mt-auto h-64 border-b border-outline-variant pb-2 relative">
+<!-- Y-Axis Guides -->
+<div class="absolute w-full border-t border-outline-variant/30 bottom-1/4"></div>
+<div class="absolute w-full border-t border-outline-variant/30 bottom-2/4"></div>
+<div class="absolute w-full border-t border-outline-variant/30 bottom-3/4"></div>
+<div class="absolute w-full border-t border-outline-variant/30 top-0"></div>
+<!-- Bars -->
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-surface-container-high rounded-t-sm h-[40%] group-hover:bg-primary-fixed transition-colors relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 4.2k</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mon</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-surface-container-high rounded-t-sm h-[55%] group-hover:bg-primary-fixed transition-colors relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 5.5k</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tue</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-surface-container-high rounded-t-sm h-[45%] group-hover:bg-primary-fixed transition-colors relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 4.8k</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Wed</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-surface-container-high rounded-t-sm h-[60%] group-hover:bg-primary-fixed transition-colors relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 6.1k</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Thu</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-primary rounded-t-sm h-[90%] shadow-[0_0_12px_rgba(211,47,47,0.3)] relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 9.2k</div>
+</div>
+<span class="font-label-bold text-label-bold text-charcoal-text">Fri</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-primary rounded-t-sm h-[100%] shadow-[0_0_12px_rgba(211,47,47,0.4)] relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 10.5k</div>
+</div>
+<span class="font-label-bold text-label-bold text-charcoal-text">Sat</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 z-10 group">
+<div class="w-full bg-surface-container-high rounded-t-sm h-[75%] group-hover:bg-primary-fixed transition-colors relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-on-tertiary font-label-sm text-label-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Rs. 7.8k</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Sun</span>
+</div>
+</div>
+</div>
+<!-- Top Sellers List -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+<h3 class="font-headline-md text-headline-md text-charcoal-text mb-6">Top Sellers</h3>
+<div class="flex flex-col gap-4">
+<!-- Item 1 -->
+<div class="flex items-center gap-4 p-2 rounded-lg hover:bg-surface transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-lg overflow-hidden border border-outline-variant shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A mouth-watering high-quality overhead shot of a massive pizza box filled with a 'Family Deal-01' combo including a large pepperoni pizza, garlic bread, and drinks, placed on a clean light wood table in a modern bistro setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOMrjZo5Y9nPUFjCZA66vS-caVmc9Vixmfa6aOJcSeEbBuWH_nBrEczr5cKurNy47jTbmIjDgEljJMUz94veKWehk0_IfHBRxWWkZ2ZqSMyiTkb0UC2Mghu5AT42vp7rXHPJxijudbTiqbFHd5QUo2kCZ6832MJ6LHZe9T536e6zetjzgkzpMApcq7B5SX003K4nuODAwxbDnN1VjbtD4w_yL-wLgpd96vM7UMtgLkLvfYFXEdrWoV"/>
+<div class="absolute top-0 left-0 bg-status-occupied text-on-primary font-label-sm text-label-sm px-1.5 py-0.5 rounded-br-lg shadow-sm">#1</div>
+</div>
+<div class="flex-1">
+<h4 class="font-label-bold text-label-bold text-charcoal-text group-hover:text-primary transition-colors">Family Deal-01</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">142 Orders</p>
+</div>
+<div class="text-right">
+<span class="block font-label-bold text-label-bold text-charcoal-text">Rs. 1,450</span>
+<span class="font-label-sm text-label-sm text-status-free flex items-center justify-end gap-1"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 12%</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-4 p-2 rounded-lg hover:bg-surface transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-lg overflow-hidden border border-outline-variant shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A close-up appetizing macro shot of a spicy Zinger Burger with crispy fried chicken, fresh lettuce, and melting cheese in a brioche bun, presented on a white plate in bright, warm light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChWDzUTLcBg3UhL5NxMwhe6SZFLo1LqtLe87-ZV7W_4U204YnNg5w539nH8njrvnvD6vjHaCmuoQGAhUmB1SGpMnJpl2rkcntsF9LzDPMBU1CDPjsq7mKRH238hGPHe8xofEOUisroBMxznyP9thTMC5JHnM6OejieY-cjQQCihYVbXO7fanFtK4DVbWirWTPkTcZ2Tjcempkr7cB6hE5XP8s5d_4FWblW60ZtgZCQbFglJ_d3cNcq"/>
+<div class="absolute top-0 left-0 bg-status-pending text-on-secondary-fixed-variant font-label-sm text-label-sm px-1.5 py-0.5 rounded-br-lg shadow-sm">#2</div>
+</div>
+<div class="flex-1">
+<h4 class="font-label-bold text-label-bold text-charcoal-text group-hover:text-primary transition-colors">Zinger Burger</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">98 Orders</p>
+</div>
+<div class="text-right">
+<span class="block font-label-bold text-label-bold text-charcoal-text">Rs. 450</span>
+<span class="font-label-sm text-label-sm text-status-free flex items-center justify-end gap-1"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 5%</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center gap-4 p-2 rounded-lg hover:bg-surface transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-lg overflow-hidden border border-outline-variant shrink-0 relative bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[24px]">local_pizza</span>
+<div class="absolute top-0 left-0 bg-surface-variant text-on-surface-variant font-label-sm text-label-sm px-1.5 py-0.5 rounded-br-lg shadow-sm">#3</div>
+</div>
+<div class="flex-1">
+<h4 class="font-label-bold text-label-bold text-charcoal-text group-hover:text-primary transition-colors">Fajita Medium</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">65 Orders</p>
+</div>
+<div class="text-right">
+<span class="block font-label-bold text-label-bold text-charcoal-text">Rs. 850</span>
+<span class="font-label-sm text-label-sm text-status-occupied flex items-center justify-end gap-1"><span class="material-symbols-outlined text-[14px]">arrow_downward</span> 2%</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2 border border-outline-variant rounded-lg font-label-bold text-label-bold text-charcoal-text hover:bg-surface-variant transition-colors h-touch-target flex items-center justify-center gap-2">
+                    View Full Menu Matrix
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</section>
+</main>
+</body></html>

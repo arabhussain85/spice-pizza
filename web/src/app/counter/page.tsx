@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { fetchTableGrid, type TableGridRow } from "@/lib/queries";
-import { LogoutButton } from "@/components/LogoutButton";
 import { formatClock } from "@/lib/time";
 import { TableCard } from "./TableCard";
 import { cn } from "@/components/ui";
@@ -50,13 +48,8 @@ export default function CounterHomePage() {
       {/* ── Top Nav ─────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-30 h-[56px] flex items-center justify-between px-6 md:px-10 bg-[#fff8f7] border-b border-[#e4beba] shadow-sm">
         <div className="text-xl font-bold text-[#af101a]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          Spice Pizza
+          Spice Pizza · Counter
         </div>
-        <nav className="hidden md:flex items-center gap-1">
-          <a className="text-[#af101a] font-bold border-b-2 border-[#af101a] pb-0.5 px-2 text-sm" href="#">Tables</a>
-          <Link className="text-[#605e5b] hover:bg-[#ffe2de] transition-colors px-3 py-1 rounded text-sm" href="/admin">Admin</Link>
-          <Link className="text-[#605e5b] hover:bg-[#ffe2de] transition-colors px-3 py-1 rounded text-sm" href="/admin/orders">Orders</Link>
-        </nav>
         <div className="flex items-center gap-3">
           {rows && (
             <>
@@ -75,9 +68,20 @@ export default function CounterHomePage() {
           <span className="hidden sm:block text-xs font-mono font-semibold text-[#605e5b] bg-[#fff0ef] px-3 py-1.5 rounded-lg border border-[#e4beba]">
             {formatClock(now)}
           </span>
-          <LogoutButton className="hidden sm:inline-flex text-xs" />
+          {/* Lock terminal — clears PIN cookie and returns to counter login */}
+          <button
+            onClick={() => {
+              document.cookie = "counter_pin=; path=/; max-age=0";
+              window.location.href = "/login/counter";
+            }}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-[#e4beba] px-3 py-1.5 text-xs font-semibold text-[#605e5b] hover:bg-[#ffe9e7] hover:text-[#af101a] hover:border-[#af101a]/40 transition-all"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>lock</span>
+            Lock Terminal
+          </button>
         </div>
       </header>
+
 
       {/* ── Main Content ─────────────────────────────────────── */}
       <main className="flex-1 pt-[56px] flex">
@@ -163,23 +167,11 @@ export default function CounterHomePage() {
       </main>
 
       {/* ── Mobile Bottom Nav ───────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex justify-around items-center px-4 py-2 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-t-2xl" style={{paddingBottom:'env(safe-area-inset-bottom,8px)'}}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex justify-center items-center px-4 py-2 bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-t-2xl" style={{paddingBottom:'env(safe-area-inset-bottom,8px)'}}>
         <a className="flex flex-col items-center justify-center bg-[#ffe9e7] text-[#af101a] rounded-full px-5 py-1 active:scale-90 transition-transform" href="#">
           <span className="material-symbols-outlined" style={{"fontVariationSettings": "'FILL' 1", fontSize:'24px'}}>grid_view</span>
           <span className="text-[10px] font-semibold mt-0.5">Tables</span>
         </a>
-        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin/orders">
-          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>receipt_long</span>
-          <span className="text-[10px] font-semibold mt-0.5">Orders</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin/menu">
-          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>menu_book</span>
-          <span className="text-[10px] font-semibold mt-0.5">Menu</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-[#605e5b] px-4 py-1 rounded-lg active:scale-90 transition-transform" href="/admin">
-          <span className="material-symbols-outlined" style={{fontSize:'24px'}}>admin_panel_settings</span>
-          <span className="text-[10px] font-semibold mt-0.5">Admin</span>
-        </Link>
       </nav>
     </div>
   );
