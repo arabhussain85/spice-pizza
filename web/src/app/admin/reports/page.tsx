@@ -41,9 +41,46 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <header>
-        <h1 className="text-2xl font-bold">Reports</h1>
-        <div className="text-sm text-muted">{rangeLabel}</div>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <div className="text-sm text-muted">{rangeLabel}</div>
+        </div>
+        <button
+          onClick={() => {
+            if (!data) return;
+            const rows = [
+              ["Metric", "Value"],
+              ["Date Range", `${from} to ${to}`],
+              ["Total Revenue", data.totalRevenue],
+              ["Order Count", data.orderCount],
+              ["Avg Order Value", data.avgOrder],
+              [],
+              ["Daily Revenue Breakup"],
+              ["Date", "Label", "Revenue (Rs)"],
+              ...data.daily.map((d) => [d.day, d.label, d.revenue]),
+              [],
+              ["Top Selling Items"],
+              ["Item Name", "Quantity Sold"],
+              ...data.topItems.map((t) => [t.name, t.qty]),
+            ];
+
+            const csvContent =
+              "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `spice_pizza_report_${from}_to_${to}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          disabled={!data}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E7D32] text-white px-3.5 py-2 text-xs font-bold shadow-xs hover:bg-[#1B5E20] transition-all disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>download</span>
+          Export CSV Report
+        </button>
       </header>
 
       {/* date range */}
