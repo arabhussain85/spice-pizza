@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const COUNTER_PIN = "1234";
@@ -25,14 +25,24 @@ export default function CounterPinLoginPage() {
       return;
     }
     if (key === "") return;
-    if (pin.length >= 4) return;
-    const next = pin + key;
-    setPin(next);
-    if (next.length === 4) {
-      // Validate immediately on 4th digit
-      setTimeout(() => validatePin(next), 120);
-    }
+    setPin((p) => {
+      if (p.length >= 4) return p;
+      const next = p + key;
+      if (next.length === 4) setTimeout(() => validatePin(next), 120);
+      return next;
+    });
   }
+
+  // Physical keyboard / numpad support (type 1234 or Backspace).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key >= "0" && e.key <= "9") press(e.key);
+      else if (e.key === "Backspace") press("⌫");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function validatePin(value: string) {
     if (value === COUNTER_PIN) {
