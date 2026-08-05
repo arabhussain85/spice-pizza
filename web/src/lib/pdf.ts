@@ -57,95 +57,115 @@ export interface BillItem {
   qty: number;
   name: string;
   sub?: string | null;
-  price: string;
+  amount: string; // "Rs. 3,600"
 }
 export interface BillSlip {
   brand: string;
-  branch?: string;
+  tagline?: string;
+  address?: string;
   phone?: string;
-  date: string;
-  time: string;
+  ntn?: string;
   orderNumber: string;
   table: string;
+  date: string;
+  time: string;
+  staff?: string;
   items: BillItem[];
   subtotal: string;
-  charges: { label: string; value: string }[];
+  serviceLabel?: string;
+  serviceValue?: string;
+  showService?: boolean;
+  extraLines?: { label: string; value: string }[];
   total: string;
-  footer1?: string;
-  footer2?: string;
+  wifi?: { ssid: string; pass: string } | null;
+  footer?: string;
+  showItemNotes?: boolean;
 }
 
-const QTY_X = 150;
-const NAME_MAX = QTY_X - LEFT - 6;
+const BILL_NAME_MAX = RIGHT - LEFT - 66;
 
 export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
   const logo = await doc.embedPng(Buffer.from(LOGO_PNG_BASE64, "base64"));
-  const logoW = 46;
+  const logoW = 42;
   const logoH = (logoW * LOGO_H) / LOGO_W;
 
-  // measure
-  let h = M + logoH + 8 + 24 + 12 + 12 + 6 + 24 + 8 + 16 + 8;
+  // ---- measure ----
+  let h = M + logoH + 4 + 15;
+  if (slip.tagline) h += 11;
+  if (slip.address) h += wrap(slip.address, font, 8, RIGHT - LEFT).length * 10;
+  if (slip.phone) h += 11;
+  if (slip.ntn) h += 11;
+  h += 2 + 8 + 12 + 11 + (slip.staff ? 11 : 0) + 8 + 14 + 6;
   for (const it of slip.items) {
-    h += Math.max(1, wrap(it.name, bold, 9, NAME_MAX).length) * 12 + (it.sub ? 10 : 0) + 6;
+    h += Math.max(1, wrap(`${it.qty}x ${it.name}`, bold, 9, BILL_NAME_MAX).length) * 12 + (slip.showItemNotes && it.sub ? 10 : 0) + 4;
   }
-  h += 8 + (1 + slip.charges.length) * 13 + 8 + 30 + 8 + 26;
-  const page = doc.addPage([W, Math.max(h, 260)]);
+  h += 2 + 8 + 13 + (slip.showService ? 13 : 0) + (slip.extraLines?.length ?? 0) * 13 + 2 + 20 + 8;
+  if (slip.wifi) h += 12 + 8;
+  if (slip.footer) h += wrap(slip.footer, italic, 8, RIGHT - LEFT).length * 10 + 2;
+  h += 10 + M;
+
+  const page = doc.addPage([W, Math.max(h, 300)]);
   const d = drawing(page);
   let y = page.getHeight() - M;
 
-  // logo + header
+  // ---- logo + business header ----
   page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
-  y -= logoH + 4;
-  d.center(slip.brand.toUpperCase(), y, 17, bold, RED);
-  y -= 14;
-  if (slip.branch) { d.center(slip.branch, y, 8.5, font, MUTED); y -= 11; }
-  if (slip.phone) { d.center(slip.phone, y, 8.5, font, MUTED); y -= 11; }
-  y -= 8;
+  y -= logoH + 2;
+  d.center(slip.brand.toUpperCase(), y, 15, bold, INK); y -= 13;
+  if (slip.tagline) { d.center(slip.tagline, y, 8, italic, MUTED); y -= 11; }
+  if (slip.address) { for (const ln of wrap(slip.address, font, 8, RIGHT - LEFT)) { d.center(ln, y, 8, font, INK); y -= 10; } }
+  if (slip.phone) { d.center(`Tel: ${slip.phone}`, y, 8, bold, INK); y -= 11; }
+  if (slip.ntn) { d.center(slip.ntn, y, 7.5, font, MUTED); y -= 11; }
+  y -= 2; d.dashed(y); y -= 12;
 
-  // meta rows
+  // ---- meta ----
+  d.left(`ORDER #${slip.orderNumber}`, y, 9, bold, INK);
+  d.right(`TABLE ${slip.table}`, y, 9, bold, INK);
+  y -= 12;
   d.left(`Date: ${slip.date}`, y, 8, font, MUTED);
-  d.right(`Bill #${slip.orderNumber}`, y, 8, font, MUTED);
+  d.right(`Time: ${slip.time}`, y, 8, font, MUTED);
   y -= 11;
-  d.left(`Time: ${slip.time}`, y, 8, font, MUTED);
-  d.at("Table ", RIGHT - bold.widthOfTextAtSize(slip.table, 8) - font.widthOfTextAtSize("Table ", 8), y, 8, font, MUTED);
-  d.right(slip.table, y, 8, bold, RED);
-  y -= 10;
-  d.dashed(y); y -= 12;
+  if (slip.staff) { d.left(`Staff: ${slip.staff}`, y, 8, font, MUTED); y -= 11; }
+  y -= 1; d.dashed(y); y -= 12;
 
-  // column heads
+  // ---- items ----
   d.left("ITEM", y, 8, bold, INK);
-  d.at("QTY", QTY_X, y, 8, bold, INK);
-  d.right("PRICE", y, 8, bold, INK);
-  y -= 8;
-  d.dashed(y); y -= 14;
-
-  // items
+  d.right("AMOUNT", y, 8, bold, INK);
+  y -= 6; d.dashed(y); y -= 14;
   for (const it of slip.items) {
-    const lines = wrap(it.name, bold, 9, NAME_MAX);
+    const lines = wrap(`${it.qty}x ${it.name}`, bold, 9, BILL_NAME_MAX);
     lines.forEach((ln, i) => {
       d.left(ln, y, 9, bold, INK);
-      if (i === 0) {
-        d.at(String(it.qty), QTY_X + 4, y, 9, font, INK);
-        d.right(it.price, y, 9, font, INK);
-      }
+      if (i === 0) d.right(it.amount, y, 9, font, INK);
       y -= 12;
     });
-    if (it.sub) { d.left(it.sub, y, 7.5, font, MUTED); y -= 10; }
+    if (slip.showItemNotes && it.sub) { d.at(`» ${it.sub}`, LEFT + 6, y, 7.5, font, MUTED); y -= 10; }
     y -= 4;
   }
 
+  // ---- totals ----
   y -= 2; d.dashed(y); y -= 12;
   d.left("Subtotal", y, 9, font, MUTED); d.right(slip.subtotal, y, 9, font, INK); y -= 13;
-  for (const c of slip.charges) { d.left(c.label, y, 9, font, MUTED); d.right(c.value, y, 9, font, INK); y -= 13; }
-  y -= 2; d.solid(y); y -= 22;
-  d.left("TOTAL", y, 13, bold, INK);
-  d.right(slip.total, y, 20, bold, RED);
-  y -= 22; d.dashed(y); y -= 16;
-  d.center(slip.footer1 ?? "THANK YOU FOR VISITING!", y, 9, bold, INK); y -= 12;
-  if (slip.footer2) d.center(slip.footer2, y, 7.5, font, MUTED);
+  if (slip.showService && slip.serviceValue) {
+    d.left(slip.serviceLabel ?? "Service Charge", y, 9, font, MUTED); d.right(slip.serviceValue, y, 9, font, INK); y -= 13;
+  }
+  for (const l of slip.extraLines ?? []) { d.left(l.label, y, 9, font, MUTED); d.right(l.value, y, 9, font, INK); y -= 13; }
+  y -= 2; d.solid(y); y -= 20;
+  d.left("NET TOTAL", y, 12, bold, INK);
+  d.right(slip.total, y, 18, bold, RED);
+  y -= 20; d.dashed(y); y -= 12;
+
+  // ---- wifi + footer ----
+  if (slip.wifi) {
+    d.center(`Customer Wi-Fi: ${slip.wifi.ssid} / Pass: ${slip.wifi.pass}`, y, 7.5, font, INK);
+    y -= 12; d.dashed(y); y -= 12;
+  }
+  if (slip.footer) { for (const ln of wrap(slip.footer, italic, 8, RIGHT - LEFT)) { d.center(ln, y, 8, italic, MUTED); y -= 10; } y -= 2; }
+  d.center("*** POWERED BY SPICE PIZZA ***", y, 7, font, MUTED);
 
   return doc.save();
 }

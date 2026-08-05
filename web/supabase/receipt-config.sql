@@ -1,0 +1,10 @@
+alter table settings add column if not exists receipt_tagline    text default 'Authentic Wood-Fired & Special Pizzas';
+alter table settings add column if not exists receipt_address    text default 'Shop #4, Food Street, Main Boulevard, Lahore';
+alter table settings add column if not exists receipt_phone      text default '+92 300 1234567';
+alter table settings add column if not exists receipt_ntn        text default 'NTN: 7654321-9';
+alter table settings add column if not exists receipt_footer     text default 'Thank you for dining with us! Please visit again.';
+alter table settings add column if not exists receipt_wifi_ssid  text default 'SpicePizza_Guest';
+alter table settings add column if not exists receipt_wifi_pass  text default 'pizza123';
+alter table settings add column if not exists receipt_show_wifi  boolean default true;
+alter table settings add column if not exists receipt_show_service boolean default true;
+alter table settings add column if not exists receipt_show_notes boolean default true;

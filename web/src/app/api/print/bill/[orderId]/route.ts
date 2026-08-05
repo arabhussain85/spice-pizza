@@ -4,12 +4,11 @@ import { renderBill, type BillSlip } from "@/lib/pdf";
 import { formatRs } from "@/lib/money";
 import { billTotals } from "@/lib/order-math";
 import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promotions";
+import { fetchReceiptConfig } from "@/lib/receipt-config";
 import type { OrderLineItem } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const bare = (n: number) => formatRs(n).replace("Rs. ", "");
 
 export async function GET(_req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
@@ -26,39 +25,49 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
   );
   const promos = await fetchActivePromotions(supa);
   const promo = promoTotals(live, promos, await fetchMenuMeta(supa));
-  const finalTotal = Math.max(0, totals.total - promo.discount);
+  const cfg = await fetchReceiptConfig(supa);
+
+  const serviceAmt = cfg.showService ? totals.service : 0;
+  const netTotal = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
 
   const item = (li: OrderLineItem) => ({
     qty: li.quantity,
     name: `${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`,
     sub: [li.note, ...li.modifiers].filter(Boolean).join(", ") || null,
-    price: bare(li.unit_price * li.quantity),
+    amount: formatRs(li.unit_price * li.quantity),
   });
 
   const slip: BillSlip = {
-    brand: "Spice Pizza",
-    branch: "Main Branch",
+    brand: cfg.brand,
+    tagline: cfg.tagline || undefined,
+    address: cfg.address || undefined,
+    phone: cfg.phone || undefined,
+    ntn: cfg.ntn || undefined,
+    orderNumber: full.order.order_number,
+    table: `#${full.table?.number ?? "?"}`,
     date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-    time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-    orderNumber: full.order.order_number.replace(/^SP-/, ""),
-    table: `T-${String(full.table?.number ?? 0).padStart(2, "0")}`,
+    time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
+    staff: full.order.server_name ? `${full.order.server_name} (Counter)` : undefined,
     items: live.map(item),
     subtotal: formatRs(totals.subtotal),
-    charges: [
-      { label: `Service charge (${full.order.service_charge_pct}%)`, value: formatRs(totals.service) },
+    serviceLabel: `Service Charge (${full.order.service_charge_pct}%)`,
+    serviceValue: formatRs(totals.service),
+    showService: cfg.showService,
+    extraLines: [
       ...(promo.discount > 0 ? [{ label: `Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}`, value: `- ${formatRs(promo.discount)}` }] : []),
       ...(totals.discount > 0 ? [{ label: "Discount", value: `- ${formatRs(totals.discount)}` }] : []),
     ],
-    total: formatRs(finalTotal),
-    footer1: "THANK YOU FOR VISITING!",
-    footer2: "Follow us on Instagram @SpicePizza",
+    total: formatRs(netTotal),
+    wifi: cfg.showWifi ? { ssid: cfg.wifiSsid, pass: cfg.wifiPass } : null,
+    footer: cfg.footer || undefined,
+    showItemNotes: cfg.showItemNotes,
   };
 
   const bytes = await renderBill(slip);
   return new Response(Buffer.from(bytes), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `inline; filename="bill-${slip.orderNumber}.pdf"`,
+      "content-disposition": `inline; filename="bill-${full.order.order_number}.pdf"`,
     },
   });
 }

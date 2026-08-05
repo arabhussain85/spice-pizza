@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Card, InputField, Switch, Pill } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
+import { saveReceiptConfig } from "../../receipt-actions";
 
 export interface ReceiptCustomConfig {
   restaurantName: string;
@@ -10,6 +12,8 @@ export interface ReceiptCustomConfig {
   phone: string;
   ntnNumber: string;
   footerNote: string;
+  wifiSsid: string;
+  wifiPass: string;
   showTaxBreakdown: boolean;
   showWifiInfo: boolean;
   showItemNotes: boolean;
@@ -24,6 +28,8 @@ const DEFAULT_CONFIG: ReceiptCustomConfig = {
   phone: "+92 300 1234567",
   ntnNumber: "NTN: 7654321-9",
   footerNote: "Thank you for dining with us! Please visit again.",
+  wifiSsid: "SpicePizza_Guest",
+  wifiPass: "pizza123",
   showTaxBreakdown: true,
   showWifiInfo: true,
   showItemNotes: true,
@@ -32,34 +38,62 @@ const DEFAULT_CONFIG: ReceiptCustomConfig = {
 };
 
 export default function ReceiptCustomizerPage() {
+  const supaRef = useRef(createClient());
   const [cfg, setCfg] = useState<ReceiptCustomConfig>(DEFAULT_CONFIG);
   const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("spice_pizza_receipt_config");
-      if (stored) {
-        setCfg({ ...DEFAULT_CONFIG, ...JSON.parse(stored) });
-      }
-    } catch (e) {
-      console.warn("Failed to load receipt config:", e);
-    }
+    supaRef.current
+      .from("settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        setCfg((c) => ({
+          ...c,
+          restaurantName: data.brand_name ?? c.restaurantName,
+          tagline: data.receipt_tagline ?? c.tagline,
+          address: data.receipt_address ?? c.address,
+          phone: data.receipt_phone ?? c.phone,
+          ntnNumber: data.receipt_ntn ?? c.ntnNumber,
+          footerNote: data.receipt_footer ?? c.footerNote,
+          wifiSsid: data.receipt_wifi_ssid ?? c.wifiSsid,
+          wifiPass: data.receipt_wifi_pass ?? c.wifiPass,
+          showTaxBreakdown: data.receipt_show_service ?? c.showTaxBreakdown,
+          showWifiInfo: data.receipt_show_wifi ?? c.showWifiInfo,
+          showItemNotes: data.receipt_show_notes ?? c.showItemNotes,
+        }));
+      });
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setBusy(true);
     try {
-      localStorage.setItem("spice_pizza_receipt_config", JSON.stringify(cfg));
+      await saveReceiptConfig({
+        brand_name: cfg.restaurantName,
+        receipt_tagline: cfg.tagline,
+        receipt_address: cfg.address,
+        receipt_phone: cfg.phone,
+        receipt_ntn: cfg.ntnNumber,
+        receipt_footer: cfg.footerNote,
+        receipt_wifi_ssid: cfg.wifiSsid,
+        receipt_wifi_pass: cfg.wifiPass,
+        receipt_show_wifi: cfg.showWifiInfo,
+        receipt_show_service: cfg.showTaxBreakdown,
+        receipt_show_notes: cfg.showItemNotes,
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       console.error("Failed to save receipt config:", e);
+    } finally {
+      setBusy(false);
     }
   };
 
-  const resetDefaults = () => {
-    setCfg(DEFAULT_CONFIG);
-    localStorage.removeItem("spice_pizza_receipt_config");
-  };
+  const resetDefaults = () => setCfg(DEFAULT_CONFIG);
 
   return (
     <div className="space-y-6">
@@ -78,7 +112,7 @@ export default function ReceiptCustomizerPage() {
             Reset Defaults
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave}>
-            {saved ? "✓ Saved" : "Save Template"}
+            {saved ? "✓ Saved" : busy ? "Saving…" : "Save Template"}
           </Button>
         </div>
       </div>
@@ -186,13 +220,17 @@ export default function ReceiptCustomizerPage() {
           </Card>
 
           <Card className="p-5 space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Footer Message</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Footer &amp; Wi-Fi</h2>
             <InputField
               label="Thank You Note"
               value={cfg.footerNote}
               onChange={(e) => setCfg({ ...cfg, footerNote: e.target.value })}
               helperText="Printed at the very bottom of every bill."
             />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InputField label="Wi-Fi Network (SSID)" value={cfg.wifiSsid} onChange={(e) => setCfg({ ...cfg, wifiSsid: e.target.value })} />
+              <InputField label="Wi-Fi Password" value={cfg.wifiPass} onChange={(e) => setCfg({ ...cfg, wifiPass: e.target.value })} />
+            </div>
           </Card>
         </div>
 
@@ -284,7 +322,7 @@ export default function ReceiptCustomizerPage() {
             {/* Wi-Fi Info */}
             {cfg.showWifiInfo && (
               <div className="py-2 text-center border-b border-dashed border-gray-400 text-[11px]">
-                <span className="font-semibold">📶 Customer Wi-Fi:</span> SpicePizza_Guest / Pass: <span className="font-mono font-bold">pizza123</span>
+                <span className="font-semibold">📶 Customer Wi-Fi:</span> {cfg.wifiSsid} / Pass: <span className="font-mono font-bold">{cfg.wifiPass}</span>
               </div>
             )}
 
