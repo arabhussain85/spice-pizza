@@ -76,6 +76,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     phone: cfg.phone || undefined,
     ntn: cfg.ntn || undefined,
     orderNumber: full.order.order_number,
+    token: (full.order as { token_number?: number | null }).token_number ?? null,
     table: `#${full.table?.number ?? "?"}`,
     date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
     time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
