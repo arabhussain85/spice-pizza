@@ -193,6 +193,10 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
   }
 
   const table = order?.table;
+  const otype = order?.order.order_type ?? "dine_in";
+  const headline =
+    otype === "takeaway" ? "Takeaway" : otype === "delivery" ? "Delivery" : `Table ${table?.number ?? "—"}`;
+  const custName = order?.order.customer_name ?? null;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FCF9F5]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -205,10 +209,14 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           </button>
           <div className="w-px h-5 bg-[#e4beba]" />
           <div>
-            <div className="text-base font-bold text-[#1A1A1A] leading-tight">Table {table?.number ?? "—"}</div>
+            <div className="text-base font-bold text-[#1A1A1A] leading-tight">{headline}</div>
             <div className="text-xs text-[#605e5b]">
               Round {roundNumber}
-              {table?.opened_at ? ` · Occupied ${formatDuration(table.opened_at, now)}` : ""}
+              {otype === "dine_in" && table?.opened_at
+                ? ` · Occupied ${formatDuration(table.opened_at, now)}`
+                : custName
+                  ? ` · ${custName}`
+                  : ""}
             </div>
           </div>
         </div>
@@ -223,7 +231,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           </button>
           <button
             onClick={async () => {
-              if (!confirm("Cancel this whole order? The table is freed and nothing is charged.")) return;
+              if (!confirm("Cancel this whole order? Nothing is charged and any table is freed.")) return;
               const reason = window.prompt("Cancellation reason (optional):") || undefined;
               await cancelOrder(orderId, reason);
               router.push("/counter");
@@ -293,7 +301,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           <div className="p-5 border-b border-[#e4beba] flex items-center justify-between">
             <div>
               <h2 className="font-bold text-[#1A1A1A]">Live Receipt</h2>
-              <div className="text-xs text-[#605e5b]">Table {table?.number ?? "—"} · #{order?.order.order_number?.replace(/^SP-/, "") ?? ""}</div>
+              <div className="text-xs text-[#605e5b]">{headline} · #{order?.order.order_number?.replace(/^SP-/, "") ?? ""}</div>
             </div>
             <span className="text-xs font-semibold text-[#605e5b] bg-white px-2.5 py-1 rounded-full border border-[#e4beba]">{totalItems} items</span>
           </div>

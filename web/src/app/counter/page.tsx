@@ -6,6 +6,7 @@ import { fetchTableGrid, type TableGridRow } from "@/lib/queries";
 import { formatClock } from "@/lib/time";
 import { TableCard } from "./TableCard";
 import { ShopControl } from "./ShopControl";
+import { OffTableOrders } from "./OffTableOrders";
 import { cn } from "@/components/ui";
 
 export default function CounterHomePage() {
@@ -113,6 +114,9 @@ export default function CounterHomePage() {
               </span>
             </div>
           </div>
+
+          {/* Takeaway & delivery (off-table) orders */}
+          <OffTableOrders />
 
           {/* States */}
           {error && (

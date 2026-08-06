@@ -23,6 +23,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
   const full = await fetchOrderFull(supa, round.order_id);
   if (!full) return new Response("Order not found", { status: 404 });
 
+  const ot = full.order.order_type;
+  const tableLabel = ot === "takeaway" ? "Takeaway" : ot === "delivery" ? "Delivery" : `Table #${full.table?.number ?? "?"}`;
+  const kitchenLabel = ot === "takeaway" ? "TAKEAWAY" : ot === "delivery" ? "DELIVERY" : `T-${String(full.table?.number ?? 0).padStart(2, "0")}`;
+
   const roundItems = ((round.order_line_items ?? []) as Array<{
     quantity: number;
     name_snapshot: string;
@@ -35,9 +39,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
 
   // ── Kitchen slip (this round) ──────────────────────────────────────────────
   const kitchen: KitchenSlip = {
-    table: `T-${String(full.table?.number ?? 0).padStart(2, "0")}`,
+    table: kitchenLabel,
     orderNumber: full.order.order_number.replace(/^SP-/, ""),
-    token: (full.order as { token_number?: number | null }).token_number ?? null,
+    token: full.order.token_number ?? null,
     time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
     items: roundItems.map((li) => ({
       qty: li.quantity,
@@ -77,8 +81,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     phone: cfg.phone || undefined,
     ntn: cfg.ntn || undefined,
     orderNumber: full.order.order_number,
-    token: (full.order as { token_number?: number | null }).token_number ?? null,
-    table: `#${full.table?.number ?? "?"}`,
+    token: full.order.token_number ?? null,
+    table: tableLabel,
+    customer:
+      ot === "dine_in"
+        ? null
+        : { name: full.order.customer_name, phone: full.order.customer_phone, address: full.order.customer_address },
     date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
     time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
     staff: full.order.server_name ? `${full.order.server_name} (Counter)` : undefined,
@@ -86,7 +94,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     subtotal: formatRs(totals.subtotal),
     serviceLabel: `Service Charge (${full.order.service_charge_pct}%)`,
     serviceValue: formatRs(totals.service),
-    showService: cfg.showService,
+    showService: cfg.showService && totals.service > 0,
     extraLines: [
       ...(promo.discount > 0 ? [{ label: `Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}`, value: `- ${formatRs(promo.discount)}` }] : []),
       ...(totals.discount > 0 ? [{ label: "Discount", value: `- ${formatRs(totals.discount)}` }] : []),

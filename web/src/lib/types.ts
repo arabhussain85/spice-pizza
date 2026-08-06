@@ -3,6 +3,7 @@
 export type Role = "owner" | "counter_staff";
 export type TableStatus = "free" | "occupied";
 export type OrderStatus = "open" | "closed" | "void";
+export type OrderType = "dine_in" | "takeaway" | "delivery";
 export type DiscountType = "percent" | "fixed";
 export type PaymentMethod = "cash" | "card" | "jazzcash" | "easypaisa" | "other";
 export type PaymentStatus = "pending" | "confirmed";
@@ -72,11 +73,17 @@ export interface MenuItemModifier {
 export interface Order {
   id: string;
   order_number: string;
+  order_type: OrderType;
   table_id: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
   server_id: string | null;
   server_name: string | null;
   status: OrderStatus;
   service_charge_pct: number;
+  token_number: number | null;
+  shift_id: string | null;
   opened_at: string;
   closed_at: string | null;
   created_at: string;

@@ -140,6 +140,9 @@ export function BillView({ orderId }: { orderId: string }) {
   }
 
   const { order: o, rounds, discount, table } = order;
+  const orderLabel =
+    o.order_type === "takeaway" ? "Takeaway" : o.order_type === "delivery" ? "Delivery" : `Table ${table?.number ?? "—"}`;
+  const isDineIn = o.order_type === "dine_in";
   const allLines = rounds.flatMap((r) => r.order_line_items);
   const totals = billTotals(
     allLines,
@@ -165,10 +168,10 @@ export function BillView({ orderId }: { orderId: string }) {
           className="flex items-center gap-1.5 text-[#605e5b] hover:text-[#af101a] transition-colors text-sm font-semibold"
         >
           <span className="material-symbols-outlined" style={{fontSize:'20px'}}>arrow_back</span>
-          Table {table?.number ?? ""}
+          Back
         </button>
         <div className="text-base font-bold text-[#1A1A1A]">
-          Bill · Table {table?.number ?? "—"}
+          Bill · {orderLabel}
         </div>
         <div className="text-xs text-[#605e5b] hidden sm:block">
           Opened {formatClock(new Date(o.opened_at))} · {rounds.length} {rounds.length === 1 ? "round" : "rounds"}
@@ -194,7 +197,14 @@ export function BillView({ orderId }: { orderId: string }) {
             </div>
             <div className="text-right">
               <p>Bill # <span className="font-bold">{o.order_number}</span></p>
-              <p>Table <span className="font-bold text-[#af101a]">T-{String(table?.number ?? "").padStart(2,"0")}</span></p>
+              {isDineIn ? (
+                <p>Table <span className="font-bold text-[#af101a]">T-{String(table?.number ?? "").padStart(2,"0")}</span></p>
+              ) : (
+                <p className="font-bold text-[#af101a] uppercase">{orderLabel}</p>
+              )}
+              {o.token_number != null && <p>Token <span className="font-bold text-[#af101a]">#{o.token_number}</span></p>}
+              {o.customer_name && <p>{o.customer_name}</p>}
+              {o.customer_phone && <p>{o.customer_phone}</p>}
             </div>
           </div>
           <div className="dotted-line" />

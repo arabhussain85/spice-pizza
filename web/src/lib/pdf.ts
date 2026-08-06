@@ -67,7 +67,8 @@ export interface BillSlip {
   ntn?: string;
   orderNumber: string;
   token?: number | null;
-  table: string;
+  table: string; // "Table #3" | "Takeaway" | "Delivery"
+  customer?: { name?: string | null; phone?: string | null; address?: string | null } | null;
   date: string;
   time: string;
   staff?: string;
@@ -100,6 +101,11 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   if (slip.phone) h += 11;
   if (slip.ntn) h += 11;
   h += 2 + 8 + 12 + 11 + (slip.staff ? 11 : 0) + 8 + 14 + 6;
+  if (slip.customer) {
+    if (slip.customer.name) h += 11;
+    if (slip.customer.phone) h += 11;
+    if (slip.customer.address) h += wrap(`Address: ${slip.customer.address}`, font, 8, RIGHT - LEFT).length * 10;
+  }
   for (const it of slip.items) {
     h += Math.max(1, wrap(it.name, bold, 9, 115).length) * 12 + (slip.showItemNotes && it.sub ? 10 : 0) + 4;
   }
@@ -127,12 +133,19 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   d.left(`ORDER #${slip.orderNumber}`, y, 9, bold, INK);
   if (slip.token != null) d.right(`TOKEN #${slip.token}`, y, 11, bold, RED);
   y -= 12;
-  d.left(`Table ${slip.table}`, y, 8, font, MUTED);
+  d.left(slip.table, y, 8, bold, INK);
   d.right(slip.date, y, 8, font, MUTED);
   y -= 11;
   if (slip.staff) d.left(`Staff: ${slip.staff}`, y, 8, font, MUTED);
   d.right(`Time: ${slip.time}`, y, 8, font, MUTED);
   y -= 11;
+  if (slip.customer) {
+    if (slip.customer.name) { d.left(`Customer: ${slip.customer.name}`, y, 8, font, INK); y -= 11; }
+    if (slip.customer.phone) { d.left(`Phone: ${slip.customer.phone}`, y, 8, font, INK); y -= 11; }
+    if (slip.customer.address) {
+      for (const ln of wrap(`Address: ${slip.customer.address}`, font, 8, RIGHT - LEFT)) { d.left(ln, y, 8, font, INK); y -= 10; }
+    }
+  }
   d.dashed(y); y -= 12;
 
   // ---- items: #  ITEM  QTY  PRICE ----

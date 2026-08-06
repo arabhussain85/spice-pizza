@@ -94,6 +94,49 @@ export async function startOrder(tableId: string): Promise<{ orderId: string }> 
   return { orderId: order.id };
 }
 
+export interface CustomerInfo {
+  name?: string;
+  phone?: string;
+  address?: string;
+}
+
+/** Start a takeaway or delivery order (no table). Service charge is waived for off-table orders. */
+async function startOffTable(
+  type: "takeaway" | "delivery",
+  customer: CustomerInfo,
+): Promise<{ orderId: string }> {
+  const supa = createAdminClient();
+  const staff = await sessionStaff();
+  const shiftId = await ensureOpenShift(supa, staff.name);
+  const token = await nextToken(supa, shiftId);
+  const { data: order, error } = await supa
+    .from("orders")
+    .insert({
+      order_type: type,
+      server_name: staff.name,
+      server_id: staff.id,
+      service_charge_pct: 0,
+      shift_id: shiftId,
+      token_number: token,
+      customer_name: customer.name?.trim() || null,
+      customer_phone: customer.phone?.trim() || null,
+      customer_address: customer.address?.trim() || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  await supa.from("order_rounds").insert({ order_id: order.id, round_number: 1 });
+  return { orderId: order.id };
+}
+
+export async function startTakeaway(customer: CustomerInfo): Promise<{ orderId: string }> {
+  return startOffTable("takeaway", customer);
+}
+
+export async function startDelivery(customer: CustomerInfo): Promise<{ orderId: string }> {
+  return startOffTable("delivery", customer);
+}
+
 interface NewLineItem {
   menuItemId: string | null;
   name: string;

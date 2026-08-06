@@ -33,7 +33,8 @@ export async function fetchTableGrid(supa: SupabaseClient): Promise<TableGridRow
       .select(
         "id,table_id,opened_at,order_number,order_rounds(id,order_line_items(quantity,unit_price,is_voided))",
       )
-      .eq("status", "open"),
+      .eq("status", "open")
+      .eq("order_type", "dine_in"),
   ]);
   if (tablesRes.error) throw tablesRes.error;
   if (ordersRes.error) throw ordersRes.error;
@@ -66,6 +67,60 @@ export async function fetchTableGrid(supa: SupabaseClient): Promise<TableGridRow
         rounds: rounds.length,
         runningTotal: sumLines(lines),
       },
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Active takeaway / delivery orders (counter home — off-table list)
+// ---------------------------------------------------------------------------
+export interface OffTableOrder {
+  id: string;
+  order_number: string;
+  order_type: "takeaway" | "delivery";
+  token_number: number | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  opened_at: string;
+  rounds: number;
+  runningTotal: number;
+}
+
+export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTableOrder[]> {
+  const { data, error } = await supa
+    .from("orders")
+    .select(
+      "id,order_number,order_type,token_number,customer_name,customer_phone,opened_at,order_rounds(id,order_line_items(quantity,unit_price,is_voided))",
+    )
+    .eq("status", "open")
+    .in("order_type", ["takeaway", "delivery"])
+    .order("opened_at", { ascending: true });
+  if (error) throw error;
+
+  const orders = (data ?? []) as Array<{
+    id: string;
+    order_number: string;
+    order_type: "takeaway" | "delivery";
+    token_number: number | null;
+    customer_name: string | null;
+    customer_phone: string | null;
+    opened_at: string;
+    order_rounds: { id: string; order_line_items: OrderLineItem[] }[];
+  }>;
+
+  return orders.map((o) => {
+    const rounds = o.order_rounds ?? [];
+    const lines = rounds.flatMap((r) => r.order_line_items ?? []).filter((li) => !li.is_voided);
+    return {
+      id: o.id,
+      order_number: o.order_number,
+      order_type: o.order_type,
+      token_number: o.token_number,
+      customer_name: o.customer_name,
+      customer_phone: o.customer_phone,
+      opened_at: o.opened_at,
+      rounds: rounds.length,
+      runningTotal: sumLines(lines),
     };
   });
 }
