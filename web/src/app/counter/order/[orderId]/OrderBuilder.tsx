@@ -18,6 +18,7 @@ import { cn } from "@/components/ui";
 import { ItemPhoto } from "@/components/ItemPhoto";
 import { ItemModal, type AddSelection } from "./ItemModal";
 import { addLineItem, deleteLineItem, sendToKitchen } from "../../actions";
+import { cancelOrder } from "@/app/admin/order-actions";
 
 /** Live receipt: every round listed (sent = desaturated, current = editable). */
 function RoundList({
@@ -219,6 +220,18 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           <button onClick={() => router.push(`/counter/order/${orderId}/bill`)} className="flex items-center gap-1.5 bg-[#ffe9e7] text-[#af101a] text-xs font-semibold px-4 h-10 rounded-xl border border-[#e4beba] hover:bg-[#ffe2de] transition-colors">
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>receipt_long</span>
             View bill
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm("Cancel this whole order? The table is freed and nothing is charged.")) return;
+              const reason = window.prompt("Cancellation reason (optional):") || undefined;
+              await cancelOrder(orderId, reason);
+              router.push("/counter");
+            }}
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-[#e4beba] px-3 text-xs font-semibold text-[#605e5b] transition-colors hover:border-[#af101a]/40 hover:text-[#af101a]"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>cancel</span>
+            Cancel
           </button>
         </div>
       </header>

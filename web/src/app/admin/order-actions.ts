@@ -40,3 +40,28 @@ export async function toggleVoidLineItem(id: string, voided: boolean, reason?: s
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+/** Cancel an order: mark it void (kept for records, no payment), free the table. */
+export async function cancelOrder(id: string, reason?: string) {
+  const supa = createAdminClient();
+  const { data: o } = await supa.from("orders").select("table_id").eq("id", id).maybeSingle();
+  const { error } = await supa
+    .from("orders")
+    .update({ status: "void", closed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  if (o?.table_id) {
+    await supa.from("restaurant_tables").update({ status: "free", opened_at: null }).eq("id", o.table_id);
+  }
+  if (reason) {
+    const { data: rounds } = await supa.from("order_rounds").select("id").eq("order_id", id);
+    const roundIds = ((rounds ?? []) as { id: string }[]).map((r) => r.id);
+    if (roundIds.length) {
+      await supa
+        .from("order_line_items")
+        .update({ is_voided: true, void_reason: `Cancelled: ${reason}`, voided_at: new Date().toISOString() })
+        .in("round_id", roundIds);
+    }
+  }
+  return { ok: true };
+}

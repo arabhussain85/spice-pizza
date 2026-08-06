@@ -6,6 +6,7 @@ import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { Card, Pill, Button, cn } from "@/components/ui";
 import { PromotionsManager } from "./PromotionsManager";
+import { updateServiceSettings, getDiscountPin, setDiscountPin } from "../settings-actions";
 
 interface DiscountActivity {
   id: string;
@@ -25,6 +26,7 @@ export default function AdminDiscountsPage() {
   const [serviceChargePct, setServiceChargePct] = useState(5);
   const [discountsRole, setDiscountsRole] = useState<"owner" | "any">("owner");
   const [requireReason, setRequireReason] = useState(true);
+  const [pin, setPin] = useState("");
   const [activities, setActivities] = useState<DiscountActivity[]>([]);
   const [todayComps, setTodayComps] = useState(0);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -34,9 +36,10 @@ export default function AdminDiscountsPage() {
     // Fetch settings
     const { data: set } = await supa.from("settings").select("*").eq("id", 1).maybeSingle();
     if (set) {
-      if (set.default_service_charge_pct != null) setServiceChargePct(set.default_service_charge_pct);
+      if (set.service_charge_pct != null) setServiceChargePct(Number(set.service_charge_pct));
       if (set.discounts_role != null) setDiscountsRole(set.discounts_role);
     }
+    setPin(await getDiscountPin());
 
     // Fetch discount activities from discounts table
     const { data: disc } = await supa
@@ -68,14 +71,11 @@ export default function AdminDiscountsPage() {
   }, [loadData]);
 
   async function handleUpdateSettings() {
-    const supa = supaRef.current;
-    await supa.from("settings").upsert({
-      id: 1,
-      default_service_charge_pct: serviceChargePct,
-      discounts_role: discountsRole,
-    });
-    setSavedMsg("Settings saved!");
-    setTimeout(() => setSavedMsg(null), 3000);
+    await updateServiceSettings({ service_charge_pct: serviceChargePct, discounts_role: discountsRole });
+    if (pin.trim()) await setDiscountPin(pin.trim());
+    setSavedMsg("Settings saved! (applies to new orders)");
+    setTimeout(() => setSavedMsg(null), 3500);
+    await loadData();
   }
 
   return (
@@ -167,6 +167,19 @@ export default function AdminDiscountsPage() {
                   onChange={(e) => setRequireReason(e.target.checked)}
                   className="w-5 h-5 accent-[#af101a] cursor-pointer"
                 />
+              </div>
+
+              <div className="p-3.5 bg-[#fff0ef] rounded-xl border border-[#e4beba]">
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1">Owner Discount PIN</label>
+                <input
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="e.g. 1234"
+                  className="w-full h-10 rounded-xl border border-[#e4beba] bg-white px-3 font-bold tracking-widest text-[#1A1A1A] outline-none focus:border-[#af101a]"
+                />
+                <p className="text-[11px] text-[#605e5b] mt-1">Required to apply discounts when “owner-only” is on. Saved with Update.</p>
               </div>
             </div>
           </Card>
