@@ -269,3 +269,91 @@ export async function mergePdfs(parts: Uint8Array[]): Promise<Uint8Array> {
   }
   return out.save();
 }
+
+// ---------------------------------------------------------------------------
+// Daily Z-report (printed on shop close)
+// ---------------------------------------------------------------------------
+export interface ZReport {
+  brand: string;
+  address?: string;
+  openedAt: string; // formatted
+  closedAt: string; // formatted
+  ordersClosed: number;
+  ordersVoid: number;
+  itemsSold: number;
+  sales: { label: string; value: string; strong?: boolean }[];
+  payments: { label: string; value: string }[];
+  netSales: string;
+  topItems?: { name: string; qty: number }[];
+  footer?: string;
+}
+
+export async function renderZReport(z: ZReport): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
+  const logo = await doc.embedPng(Buffer.from(LOGO_PNG_BASE64, "base64"));
+  const logoW = 42;
+  const logoH = (logoW * LOGO_H) / LOGO_W;
+
+  // fixed chrome (margins, logo, headers, dividers, counts, net block, footers) ≈ 350pt
+  let h = 350 + logoH;
+  if (z.address) h += wrap(z.address, font, 8, RIGHT - LEFT).length * 10;
+  h += z.sales.length * 13 + z.payments.length * 13 + (z.topItems?.length ?? 0) * 12;
+  if (z.footer) h += wrap(z.footer, italic, 8, RIGHT - LEFT).length * 10;
+
+  const page = doc.addPage([W, Math.max(h, 360)]);
+  const d = drawing(page);
+  let y = page.getHeight() - M;
+
+  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  y -= logoH + 8;
+  d.center(z.brand.toUpperCase(), y, 15, bold, INK); y -= 13;
+  if (z.address) { for (const ln of wrap(z.address, font, 8, RIGHT - LEFT)) { d.center(ln, y, 8, font, INK); y -= 10; } }
+  y -= 2;
+  d.center("DAILY Z-REPORT", y, 12, bold, RED); y -= 14;
+  d.dashed(y); y -= 12;
+
+  d.left("Opened", y, 8, font, MUTED); d.right(z.openedAt, y, 8, font, INK); y -= 11;
+  d.left("Closed", y, 8, font, MUTED); d.right(z.closedAt, y, 8, font, INK); y -= 11;
+  y -= 1; d.dashed(y); y -= 12;
+
+  // headline counts
+  d.left("Orders Completed", y, 9, bold, INK); d.right(String(z.ordersClosed), y, 9, bold, INK); y -= 12;
+  d.left("Orders Cancelled", y, 9, font, MUTED); d.right(String(z.ordersVoid), y, 9, font, INK); y -= 12;
+  d.left("Items Sold", y, 9, font, MUTED); d.right(String(z.itemsSold), y, 9, font, INK); y -= 12;
+  y -= 2; d.dashed(y); y -= 12;
+
+  // sales breakdown
+  d.left("SALES", y, 8, bold, MUTED); y -= 12;
+  for (const s of z.sales) {
+    d.left(s.label, y, 9, s.strong ? bold : font, s.strong ? INK : MUTED);
+    d.right(s.value, y, 9, s.strong ? bold : font, INK);
+    y -= 13;
+  }
+  y -= 2; d.solid(y); y -= 18;
+  d.left("NET SALES", y, 12, bold, INK);
+  d.right(z.netSales, y, 16, bold, RED);
+  y -= 18; d.dashed(y); y -= 12;
+
+  // payments received by method
+  d.left("PAYMENTS RECEIVED", y, 8, bold, MUTED); y -= 12;
+  for (const p of z.payments) {
+    d.left(p.label, y, 9, font, MUTED); d.right(p.value, y, 9, font, INK); y -= 13;
+  }
+
+  if (z.topItems && z.topItems.length) {
+    y -= 2; d.dashed(y); y -= 12;
+    d.left("TOP ITEMS", y, 8, bold, MUTED); y -= 12;
+    for (const t of z.topItems) {
+      d.left(t.name, y, 9, font, INK); d.right(`x${t.qty}`, y, 9, bold, INK); y -= 12;
+    }
+  }
+
+  y -= 4; d.dashed(y); y -= 14;
+  d.center("*** END OF DAY ***", y, 9, bold, INK); y -= 12;
+  if (z.footer) { for (const ln of wrap(z.footer, italic, 8, RIGHT - LEFT)) { d.center(ln, y, 8, italic, MUTED); y -= 10; } }
+
+  return doc.save();
+}

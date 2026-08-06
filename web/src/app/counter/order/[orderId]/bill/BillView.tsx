@@ -337,10 +337,13 @@ export function BillView({ orderId }: { orderId: string }) {
         <PaymentModal
           total={finalTotal}
           onClose={() => setShowPay(false)}
-          onConfirm={async (method, amount, screenshotUrl) => {
+          onConfirm={async (method, tendered, screenshotUrl) => {
             setError(null);
             try {
-              const res = await closeAndPay(orderId, [{ method, amount, screenshotUrl }]);
+              // Revenue is always the bill total; `tendered` (cash handed over) drives the change line only.
+              const res = await closeAndPay(orderId, [
+                { method, amount: finalTotal, tendered: method === "cash" ? tendered : null, screenshotUrl },
+              ]);
               setPaidTotal(finalTotal);
               if (res.pending) {
                 setPendingApproval(true);
@@ -451,13 +454,15 @@ function PaymentModal({
 }: {
   total: number;
   onClose: () => void;
-  onConfirm: (method: PaymentMethod, amount: number, screenshotUrl: string | null) => Promise<void>;
+  onConfirm: (method: PaymentMethod, tendered: number, screenshotUrl: string | null) => Promise<void>;
 }) {
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [amount, setAmount] = useState(String(total));
   const [screenshot, setScreenshot] = useState("");
   const [busy, setBusy] = useState(false);
   const online = method === "jazzcash" || method === "easypaisa";
+  const isCash = method === "cash";
+  const change = isCash ? Math.max(0, (Number(amount) || 0) - total) : 0;
   const methods: { key: PaymentMethod; label: string; icon: string }[] = [
     { key: "cash", label: "Cash", icon: "payments" },
     { key: "card", label: "Card", icon: "credit_card" },
@@ -495,7 +500,9 @@ function PaymentModal({
           </button>
         ))}
       </div>
-      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">Amount received</label>
+      <label className="block text-sm font-semibold text-[#1A1A1A] mb-1.5">
+        {isCash ? "Cash received" : "Amount received"}
+      </label>
       <input
         type="number"
         inputMode="numeric"
@@ -503,6 +510,14 @@ function PaymentModal({
         onChange={(e) => setAmount(e.target.value)}
         className="w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a] transition-colors mb-3"
       />
+      {isCash && (
+        <div className="flex items-center justify-between rounded-xl bg-[#fff0ef] border border-[#e4beba] px-4 py-2.5 text-sm mb-3">
+          <span className="font-semibold text-[#605e5b]">Change due</span>
+          <span className="font-bold text-[#af101a] text-base" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>
+            {formatRs(change)}
+          </span>
+        </div>
+      )}
       {online && (
         <>
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800 mb-3">

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchTableGrid, type TableGridRow } from "@/lib/queries";
 import { formatClock } from "@/lib/time";
 import { TableCard } from "./TableCard";
+import { ShopControl } from "./ShopControl";
 import { cn } from "@/components/ui";
 
 export default function CounterHomePage() {
@@ -70,6 +71,7 @@ export default function CounterHomePage() {
           <span suppressHydrationWarning className="hidden sm:block text-xs font-mono font-semibold text-[#605e5b] bg-[#fff0ef] px-3 py-1.5 rounded-lg border border-[#e4beba]">
             {mounted ? formatClock(now) : ""}
           </span>
+          <ShopControl />
           <a
             href="/counter/reports"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-[#e4beba] px-3 py-1.5 text-xs font-semibold text-[#1A1A1A] hover:bg-[#fff0ef] hover:border-[#af101a]/40 transition-all"

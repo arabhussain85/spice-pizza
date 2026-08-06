@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { ensureOpenShift, nextToken } from "@/lib/shifts";
 import type { PaymentMethod, PaymentStatus } from "@/lib/types";
 
 const DEFAULT_SERVER = "AK";
@@ -69,9 +70,18 @@ export async function startOrder(tableId: string): Promise<{ orderId: string }> 
 
   const pct = await serviceChargePct(supa);
   const staff = await sessionStaff();
+  const shiftId = await ensureOpenShift(supa, staff.name);
+  const token = await nextToken(supa, shiftId);
   const { data: order, error } = await supa
     .from("orders")
-    .insert({ table_id: tableId, server_name: staff.name, server_id: staff.id, service_charge_pct: pct })
+    .insert({
+      table_id: tableId,
+      server_name: staff.name,
+      server_id: staff.id,
+      service_charge_pct: pct,
+      shift_id: shiftId,
+      token_number: token,
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -183,6 +193,7 @@ export async function validateOwnerPin(pin: string): Promise<boolean> {
 interface PaymentInput {
   method: PaymentMethod;
   amount: number;
+  tendered?: number | null;
   screenshotUrl?: string | null;
 }
 
@@ -196,6 +207,7 @@ export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
       order_id: orderId,
       method: p.method,
       amount: p.amount,
+      tendered: p.method === "cash" && p.tendered ? p.tendered : null,
       status,
       screenshot_url: p.screenshotUrl ?? null,
       confirmed_at: online ? null : new Date().toISOString(),
