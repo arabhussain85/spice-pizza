@@ -37,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
   const kitchen: KitchenSlip = {
     table: `T-${String(full.table?.number ?? 0).padStart(2, "0")}`,
     orderNumber: full.order.order_number.replace(/^SP-/, ""),
+    token: (full.order as { token_number?: number | null }).token_number ?? null,
     time: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
     items: roundItems.map((li) => ({
       qty: li.quantity,

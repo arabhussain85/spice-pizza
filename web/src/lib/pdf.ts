@@ -205,6 +205,7 @@ export interface KitchenItem {
 export interface KitchenSlip {
   table: string;
   orderNumber: string;
+  token?: number | null;
   time: string;
   items: KitchenItem[];
 }
@@ -217,7 +218,7 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const logoW = 40;
   const logoH = (logoW * LOGO_H) / LOGO_W;
 
-  let h = M + logoH + 6 + 26 + 16 + 12;
+  let h = M + logoH + 6 + 26 + 16 + 12 + (slip.token != null ? 22 : 0);
   for (const it of slip.items) {
     h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT).length) * 13;
     h += (it.modifiers?.length ?? 0) * 12 + (it.contents?.length ?? 0) * 12 + 6;
@@ -231,6 +232,7 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   y -= logoH + 20;
   d.center("KITCHEN ORDER", y, 14, bold, INK);
   y -= 18;
+  if (slip.token != null) { d.center(`TOKEN #${slip.token}`, y, 16, bold, RED); y -= 20; }
   d.left(slip.table, y, 10, bold, INK);
   d.center(`Order #${slip.orderNumber}`, y, 9, font, INK);
   d.right(slip.time, y, 9, font, INK);
