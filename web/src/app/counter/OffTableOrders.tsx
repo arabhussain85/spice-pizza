@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchOffTableOrders, type OffTableOrder } from "@/lib/queries";
 import { startTakeaway, startDelivery, type CustomerInfo } from "./actions";
+import { cancelOrder } from "@/app/admin/order-actions";
 import { formatRs } from "@/lib/money";
 import { cn } from "@/components/ui";
 
@@ -24,6 +25,13 @@ export function OffTableOrders() {
       /* keep last known list */
     }
   }, []);
+
+  async function handleCancel(o: OffTableOrder) {
+    if (!confirm(`Cancel this ${o.order_type} order?\nNothing is charged.`)) return;
+    const reason = window.prompt("Cancellation reason (optional):") || undefined;
+    await cancelOrder(o.id, reason);
+    await refetch();
+  }
 
   useEffect(() => {
     refetch();
@@ -69,42 +77,61 @@ export function OffTableOrders() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {orders.map((o) => (
-            <button
+            <div
               key={o.id}
-              onClick={() => router.push(`/counter/order/${o.id}`)}
-              className="group flex flex-col rounded-xl border border-[#e4beba] bg-white p-4 text-left shadow-sm transition-all hover:border-[#af101a]/40 hover:shadow-md active:scale-[0.98]"
+              className="group flex flex-col rounded-xl border border-[#e4beba] bg-white p-4 shadow-sm transition-all hover:border-[#af101a]/40 hover:shadow-md"
             >
-              <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                    o.order_type === "delivery"
-                      ? "bg-[#fff0ef] text-[#af101a] border border-[#e4beba]"
-                      : "bg-[#fff4e5] text-[#b26a00] border border-[#f0d9b0]",
-                  )}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: "13px" }}>
-                    {o.order_type === "delivery" ? "delivery_dining" : "takeout_dining"}
+              <button onClick={() => router.push(`/counter/order/${o.id}`)} className="text-left active:scale-[0.99]">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      o.order_type === "delivery"
+                        ? "bg-[#fff0ef] text-[#af101a] border border-[#e4beba]"
+                        : "bg-[#fff4e5] text-[#b26a00] border border-[#f0d9b0]",
+                    )}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "13px" }}>
+                      {o.order_type === "delivery" ? "delivery_dining" : "takeout_dining"}
+                    </span>
+                    {o.order_type}
                   </span>
-                  {o.order_type}
-                </span>
-                {o.token_number != null && (
-                  <span className="text-sm font-extrabold text-[#af101a]">#{o.token_number}</span>
-                )}
+                  {o.token_number != null && (
+                    <span className="text-sm font-extrabold text-[#af101a]">#{o.token_number}</span>
+                  )}
+                </div>
+                <div className="mt-2 text-sm font-bold text-[#1A1A1A]">
+                  {o.customer_name || "Walk-in customer"}
+                </div>
+                <div className="text-xs text-[#605e5b]">
+                  {o.customer_phone || `Order ${o.order_number}`}
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-[#f0e4e2] pt-2">
+                  <span className="text-xs text-[#605e5b]">{o.rounds} round{o.rounds === 1 ? "" : "s"}</span>
+                  <span className="text-sm font-bold text-[#af101a]" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>
+                    {formatRs(o.runningTotal)}
+                  </span>
+                </div>
+              </button>
+
+              {/* Card actions */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleCancel(o)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#e4beba] px-3 py-2 text-xs font-semibold text-[#605e5b] transition-colors hover:border-[#af101a]/40 hover:bg-[#fff0ef] hover:text-[#af101a]"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>cancel</span>
+                  Cancel
+                </button>
+                <button
+                  onClick={() => router.push(`/counter/order/${o.id}/bill`)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#af101a] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#8b0d14]"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>payments</span>
+                  Close &amp; Pay
+                </button>
               </div>
-              <div className="mt-2 text-sm font-bold text-[#1A1A1A]">
-                {o.customer_name || "Walk-in customer"}
-              </div>
-              <div className="text-xs text-[#605e5b]">
-                {o.customer_phone || `Order ${o.order_number}`}
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-[#f0e4e2] pt-2">
-                <span className="text-xs text-[#605e5b]">{o.rounds} round{o.rounds === 1 ? "" : "s"}</span>
-                <span className="text-sm font-bold text-[#af101a]" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>
-                  {formatRs(o.runningTotal)}
-                </span>
-              </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
