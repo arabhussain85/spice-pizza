@@ -197,28 +197,30 @@ export default function AdminLoginPage() {
               )}
             </button>
 
-            {/* Quick fill for dev */}
-            <div className="pt-2 border-t" style={{ borderColor: "#e4beba" }}>
-              <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#8f6f6c" }}>
-                Dev shortcut
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("owner@spicepizza.local");
-                  setPassword("owner1234");
-                }}
-                className="w-full text-left rounded-xl border px-4 py-2.5 hover:bg-[#fff0ef] transition-colors"
-                style={{ borderColor: "#e4beba" }}
-              >
-                <div className="text-xs font-bold" style={{ color: "#1A1A1A" }}>
-                  Owner Account
-                </div>
-                <div className="text-[10px]" style={{ color: "#605e5b" }}>
-                  owner@spicepizza.local
-                </div>
-              </button>
-            </div>
+            {/* Quick fill for dev (hidden in production) */}
+            {process.env.NODE_ENV !== "production" && (
+              <div className="pt-2 border-t" style={{ borderColor: "#e4beba" }}>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#8f6f6c" }}>
+                  Dev shortcut
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("owner@spicepizza.local");
+                    setPassword("owner1234");
+                  }}
+                  className="w-full text-left rounded-xl border px-4 py-2.5 hover:bg-[#fff0ef] transition-colors"
+                  style={{ borderColor: "#e4beba" }}
+                >
+                  <div className="text-xs font-bold" style={{ color: "#1A1A1A" }}>
+                    Owner Account
+                  </div>
+                  <div className="text-[10px]" style={{ color: "#605e5b" }}>
+                    owner@spicepizza.local
+                  </div>
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

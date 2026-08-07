@@ -196,28 +196,30 @@ export default function CounterHomePage() {
               <span className="material-symbols-outlined" style={{fontSize:'18px'}}>refresh</span>
               Refresh Status
             </button>
-            <button
-              onClick={async () => {
-                const ok = await confirm({
-                  title: "Reset all data?",
-                  message: "Wipes all orders, payments and resets every table to zero. This cannot be undone.",
-                  confirmLabel: "Wipe everything",
-                  danger: true,
-                });
-                if (!ok) return;
-                const res = await fetch("/api/reset-demo", { method: "POST" });
-                if (res.ok) {
-                  await notify({ title: "Done", message: "System completely reset." });
-                  refetch();
-                } else {
-                  await notify({ title: "Failed", message: "Could not reset the system.", danger: true });
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-[#fff0ef] text-[#d32f2f] text-xs font-bold h-10 rounded-xl border border-red-200 hover:bg-red-100 transition-colors"
-            >
-              <span className="material-symbols-outlined" style={{fontSize:'18px'}}>delete_forever</span>
-              DEV RESET DATA
-            </button>
+            {process.env.NODE_ENV !== "production" && (
+              <button
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Reset all data?",
+                    message: "Wipes all orders, payments and resets every table to zero. This cannot be undone.",
+                    confirmLabel: "Wipe everything",
+                    danger: true,
+                  });
+                  if (!ok) return;
+                  const res = await fetch("/api/reset-demo", { method: "POST" });
+                  if (res.ok) {
+                    await notify({ title: "Done", message: "System completely reset." });
+                    refetch();
+                  } else {
+                    await notify({ title: "Failed", message: "Could not reset the system.", danger: true });
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-[#fff0ef] text-[#d32f2f] text-xs font-bold h-10 rounded-xl border border-red-200 hover:bg-red-100 transition-colors"
+              >
+                <span className="material-symbols-outlined" style={{fontSize:'18px'}}>delete_forever</span>
+                DEV RESET DATA
+              </button>
+            )}
           </div>
         </aside>
       </main>

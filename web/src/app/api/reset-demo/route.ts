@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST() {
+  // Destructive dev-only tool — never allow it to run on a production deploy.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Disabled in production" }, { status: 403 });
+  }
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
