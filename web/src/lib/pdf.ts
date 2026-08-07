@@ -241,10 +241,15 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const logoW = 40;
   const logoH = (logoW * LOGO_H) / LOGO_W;
 
-  const KNAME_MAX = RIGHT - LEFT - 52; // leave room for the price column
+  // ruled table columns: QTY | ITEM | PRICE
+  const QTY_X = LEFT;
+  const ITEM_X = LEFT + 28;
+  const COL1 = LEFT + 22; // divider between QTY and ITEM
+  const COL2 = RIGHT - 52; // divider between ITEM and PRICE
+  const KNAME_MAX = COL2 - ITEM_X - 4;
   let h = M + logoH + 6 + 26 + 16 + 12 + (slip.token != null ? 22 : 0) + 12;
   for (const it of slip.items) {
-    h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, KNAME_MAX).length) * 13;
+    h += Math.max(1, wrap(it.name.toUpperCase(), bold, 10, KNAME_MAX).length) * 13;
     h += (it.modifiers?.length ?? 0) * 12 + (it.contents?.length ?? 0) * 12 + 6;
   }
   h += (slip.total ? 28 : 0) + 12 + 26 + M;
@@ -261,26 +266,36 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   d.center(`Order #${slip.orderNumber}`, y, 9, font, INK);
   d.right(slip.time, y, 9, font, INK);
   y -= 10;
-  d.left("ITEM", y, 8, bold, MUTED);
+  const tableTop = y + 11;
+  d.at("QTY", QTY_X, y, 8, bold, MUTED);
+  d.at("ITEM", ITEM_X, y, 8, bold, MUTED);
   d.right("PRICE", y, 8, bold, MUTED);
   y -= 6; d.dashed(y); y -= 14;
 
   for (const it of slip.items) {
-    const lines = wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, KNAME_MAX);
+    const lines = wrap(it.name.toUpperCase(), bold, 10, KNAME_MAX);
     lines.forEach((ln, i) => {
-      d.left(ln, y, 10, bold, INK);
-      if (i === 0 && it.amount) d.right(it.amount, y, 10, bold, INK);
+      if (i === 0) {
+        d.at(`${it.qty}x`, QTY_X, y, 11, bold, INK);
+        if (it.amount) d.right(it.amount, y, 10, bold, INK);
+      }
+      d.at(ln, ITEM_X, y, 10, bold, INK);
       y -= 13;
     });
     for (const m of it.modifiers ?? []) {
-      d.at(`*** ${m.toUpperCase()} ***`, LEFT + 12, y, 9, bold, RED);
+      d.at(`*** ${m.toUpperCase()} ***`, ITEM_X, y, 9, bold, RED);
       y -= 12;
     }
     for (const c of it.contents ?? []) {
-      d.at(`- ${c}`, LEFT + 12, y, 9, font, INK);
+      d.at(`- ${c}`, ITEM_X, y, 9, font, INK);
       y -= 12;
     }
     y -= 6;
+  }
+  // vertical column rules spanning the item table
+  const tableBottom = y + 8;
+  for (const vx of [COL1, COL2]) {
+    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 0.6, color: RULE });
   }
 
   if (slip.total) {
