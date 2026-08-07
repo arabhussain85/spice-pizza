@@ -6,6 +6,7 @@ import { fetchMenu } from "@/lib/queries";
 import type { Promotion } from "@/lib/promotions";
 import type { MenuCategory } from "@/lib/types";
 import { Card } from "@/components/ui";
+import { useConfirm } from "@/components/Confirm";
 import { createPromotion, deletePromotion, setPromotionActive } from "../promo-actions";
 
 interface ProductRef {
@@ -14,6 +15,7 @@ interface ProductRef {
 }
 
 export function PromotionsManager() {
+  const { confirm } = useConfirm();
   const supaRef = useRef(createClient());
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [cats, setCats] = useState<MenuCategory[]>([]);
@@ -200,7 +202,10 @@ export function PromotionsManager() {
                 {p.is_active ? "Active" : "Paused"}
               </button>
               <button
-                onClick={async () => { if (confirm(`Delete promotion “${p.name}”?`)) { await deletePromotion(p.id); await load(); } }}
+                onClick={async () => {
+                  const ok = await confirm({ title: "Delete promotion?", message: `“${p.name}” will be removed.`, confirmLabel: "Delete", danger: true });
+                  if (ok) { await deletePromotion(p.id); await load(); }
+                }}
                 className="text-[#8f6f6c] hover:text-[#af101a]"
                 aria-label="delete"
               >

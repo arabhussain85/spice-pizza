@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ConfirmProvider } from "@/components/Confirm";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -41,7 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-cream text-ink" style={{ fontFamily: "var(--font-sans, 'Plus Jakarta Sans', system-ui, sans-serif)" }}>
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
       </body>
     </html>
   );

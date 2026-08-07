@@ -8,9 +8,11 @@ import { formatDuration } from "@/lib/time";
 import { Icon } from "@/components/Icon";
 import { startOrder } from "./actions";
 import { cancelOrder } from "@/app/admin/order-actions";
+import { useConfirm } from "@/components/Confirm";
 
 export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
   const router = useRouter();
+  const { prompt } = useConfirm();
   const [pending, startTransition] = useTransition();
   const occupied = row.table.status === "occupied" && row.order;
 
@@ -21,11 +23,19 @@ export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
     });
   }
 
-  function onCancel() {
-    if (!confirm(`Cancel Table ${row.table.number}'s order?\nThe table is freed and nothing is charged.`)) return;
-    const reason = window.prompt("Cancellation reason (optional):") || undefined;
+  async function onCancel() {
+    const reason = await prompt({
+      title: `Cancel Table ${row.table.number}'s order?`,
+      message: "The table is freed and nothing is charged.",
+      inputLabel: "Reason (optional)",
+      placeholder: "e.g. wrong order",
+      confirmLabel: "Cancel order",
+      cancelLabel: "Keep order",
+      danger: true,
+    });
+    if (reason === null) return;
     startTransition(async () => {
-      await cancelOrder(row.order!.id, reason);
+      await cancelOrder(row.order!.id, reason || undefined);
     });
   }
 

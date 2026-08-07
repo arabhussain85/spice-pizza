@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getShiftStatus, openShift, closeShift, type ShiftStatus } from "./shift-actions";
+import { useConfirm } from "@/components/Confirm";
 
 /** Open Shop / Close Shop control. Closing prints the daily Z-report and resets the order token counter. */
 export function ShopControl() {
+  const { confirm, notify } = useConfirm();
   const [status, setStatus] = useState<ShiftStatus | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -31,12 +33,18 @@ export function ShopControl() {
   }
 
   async function handleClose() {
-    if (!confirm("Close the shop for today?\n\nThis prints the daily Z-report and resets order tokens to #1.")) return;
+    const ok = await confirm({
+      title: "Close the shop for today?",
+      message: "This prints the daily Z-report and resets order tokens to #1.",
+      confirmLabel: "Close shop",
+      cancelLabel: "Not yet",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await closeShift();
       if (!res.ok) {
-        alert(res.error);
+        await notify({ title: "Can't close yet", message: res.error, danger: true });
         return;
       }
       window.open(`/api/print/zreport/${res.shiftId}`, "_blank");

@@ -8,8 +8,10 @@ import { TableCard } from "./TableCard";
 import { ShopControl } from "./ShopControl";
 import { OffTableOrders } from "./OffTableOrders";
 import { cn } from "@/components/ui";
+import { useConfirm } from "@/components/Confirm";
 
 export default function CounterHomePage() {
+  const { confirm, notify } = useConfirm();
   const supaRef = useRef(createClient());
   const [rows, setRows] = useState<TableGridRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -196,14 +198,19 @@ export default function CounterHomePage() {
             </button>
             <button
               onClick={async () => {
-                if (confirm("DEV RESET: Wipe all orders, payments & reset tables to zero?")) {
-                  const res = await fetch("/api/reset-demo", { method: "POST" });
-                  if (res.ok) {
-                    alert("System completely reset!");
-                    refetch();
-                  } else {
-                    alert("Failed to reset.");
-                  }
+                const ok = await confirm({
+                  title: "Reset all data?",
+                  message: "Wipes all orders, payments and resets every table to zero. This cannot be undone.",
+                  confirmLabel: "Wipe everything",
+                  danger: true,
+                });
+                if (!ok) return;
+                const res = await fetch("/api/reset-demo", { method: "POST" });
+                if (res.ok) {
+                  await notify({ title: "Done", message: "System completely reset." });
+                  refetch();
+                } else {
+                  await notify({ title: "Failed", message: "Could not reset the system.", danger: true });
                 }
               }}
               className="w-full flex items-center justify-center gap-2 bg-[#fff0ef] text-[#d32f2f] text-xs font-bold h-10 rounded-xl border border-red-200 hover:bg-red-100 transition-colors"

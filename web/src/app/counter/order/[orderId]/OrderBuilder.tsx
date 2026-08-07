@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/components/Confirm";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchMenu,
@@ -99,6 +100,7 @@ function RoundList({
 
 export function OrderBuilder({ orderId }: { orderId: string }) {
   const router = useRouter();
+  const { prompt } = useConfirm();
   const supaRef = useRef(createClient());
   const [menu, setMenu] = useState<MenuCategoryWithProducts[]>([]);
   const [modifiers, setModifiers] = useState<string[]>([]);
@@ -231,9 +233,17 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           </button>
           <button
             onClick={async () => {
-              if (!confirm("Cancel this whole order? Nothing is charged and any table is freed.")) return;
-              const reason = window.prompt("Cancellation reason (optional):") || undefined;
-              await cancelOrder(orderId, reason);
+              const reason = await prompt({
+                title: "Cancel this order?",
+                message: "Nothing is charged and any table is freed.",
+                inputLabel: "Reason (optional)",
+                placeholder: "e.g. customer left",
+                confirmLabel: "Cancel order",
+                cancelLabel: "Keep order",
+                danger: true,
+              });
+              if (reason === null) return;
+              await cancelOrder(orderId, reason || undefined);
               router.push("/counter");
             }}
             className="flex h-10 items-center gap-1.5 rounded-xl border border-[#e4beba] px-3 text-xs font-semibold text-[#605e5b] transition-colors hover:border-[#af101a]/40 hover:text-[#af101a]"

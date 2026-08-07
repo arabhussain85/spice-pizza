@@ -11,10 +11,12 @@ import { billTotals } from "@/lib/order-math";
 import { fetchActivePromotions, fetchMenuMeta, promoTotals, type Promotion, type MenuMeta } from "@/lib/promotions";
 import { cn } from "@/components/ui";
 import { BottomSheet } from "@/components/BottomSheet";
+import { useConfirm } from "@/components/Confirm";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
 export function BillView({ orderId }: { orderId: string }) {
   const router = useRouter();
+  const confirmUi = useConfirm();
   const supaRef = useRef(createClient());
   const [order, setOrder] = useState<OrderFull | null>(null);
   const [promos, setPromos] = useState<Promotion[]>([]);
@@ -154,9 +156,16 @@ export function BillView({ orderId }: { orderId: string }) {
   const finalTotal = Math.max(0, totals.total - promoRes.discount);
 
   async function handleVoid(lineId: string) {
-    const reason = window.prompt("Void reason (required):");
-    if (!reason || !reason.trim()) return;
-    await voidLineItem(lineId, reason.trim());
+    const reason = await confirmUi.prompt({
+      title: "Void this item?",
+      inputLabel: "Reason (required)",
+      placeholder: "e.g. wrong item, kitchen error",
+      confirmLabel: "Void item",
+      required: true,
+      danger: true,
+    });
+    if (!reason) return;
+    await voidLineItem(lineId, reason);
     await refetch();
   }
 

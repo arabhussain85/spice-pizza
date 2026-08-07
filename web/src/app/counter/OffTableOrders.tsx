@@ -9,12 +9,14 @@ import { cancelOrder } from "@/app/admin/order-actions";
 import { formatRs } from "@/lib/money";
 import { cn } from "@/components/ui";
 import { BottomSheet } from "@/components/BottomSheet";
+import { useConfirm } from "@/components/Confirm";
 
 type NewType = "takeaway" | "delivery" | null;
 
 /** Takeaway & Delivery: start off-table orders and continue the active ones. */
 export function OffTableOrders() {
   const router = useRouter();
+  const { prompt } = useConfirm();
   const supaRef = useRef(createClient());
   const [orders, setOrders] = useState<OffTableOrder[]>([]);
   const [modal, setModal] = useState<NewType>(null);
@@ -28,9 +30,17 @@ export function OffTableOrders() {
   }, []);
 
   async function handleCancel(o: OffTableOrder) {
-    if (!confirm(`Cancel this ${o.order_type} order?\nNothing is charged.`)) return;
-    const reason = window.prompt("Cancellation reason (optional):") || undefined;
-    await cancelOrder(o.id, reason);
+    const reason = await prompt({
+      title: `Cancel this ${o.order_type} order?`,
+      message: "Nothing is charged.",
+      inputLabel: "Reason (optional)",
+      placeholder: "e.g. customer cancelled",
+      confirmLabel: "Cancel order",
+      cancelLabel: "Keep order",
+      danger: true,
+    });
+    if (reason === null) return;
+    await cancelOrder(o.id, reason || undefined);
     await refetch();
   }
 

@@ -6,6 +6,7 @@ import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { Icon } from "@/components/Icon";
 import { PaymentSuccess } from "@/components/PaymentSuccess";
+import { useConfirm } from "@/components/Confirm";
 import { confirmPayment, rejectPayment } from "../actions";
 
 interface PayRow {
@@ -28,6 +29,7 @@ const methodIcon: Record<string, string> = {
 };
 
 export default function PaymentsPage() {
+  const { confirm } = useConfirm();
   const supaRef = useRef(createClient());
   const [pending, setPending] = useState<PayRow[]>([]);
   const [verified, setVerified] = useState<PayRow[]>([]);
@@ -156,7 +158,13 @@ export default function PaymentsPage() {
             <div className="mt-3 flex gap-2">
               <button
                 onClick={async () => {
-                  if (confirm("Reject and remove this payment? The bill stays unpaid.")) {
+                  const ok = await confirm({
+                    title: "Reject this payment?",
+                    message: "It is removed and the bill stays unpaid.",
+                    confirmLabel: "Reject",
+                    danger: true,
+                  });
+                  if (ok) {
                     await rejectPayment(p.id);
                     await load();
                   }

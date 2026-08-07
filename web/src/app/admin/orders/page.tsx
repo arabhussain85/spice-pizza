@@ -8,9 +8,11 @@ import { formatRs } from "@/lib/money";
 import { formatClock } from "@/lib/time";
 import { billTotals } from "@/lib/order-math";
 import { Card, Pill, cn } from "@/components/ui";
+import { useConfirm } from "@/components/Confirm";
 import { deleteOrder, toggleVoidLineItem, updateOrderLineItem } from "../order-actions";
 
 export default function OrderHistoryPage() {
+  const { confirm } = useConfirm();
   const supaRef = useRef(createClient());
   const [rows, setRows] = useState<OrderHistoryRow[]>([]);
   const [table, setTable] = useState("");
@@ -41,7 +43,13 @@ export default function OrderHistoryPage() {
   };
 
   async function quickDelete(id: string, label: string) {
-    if (!confirm(`Delete order ${label}? This permanently removes it and its receipt.`)) return;
+    const ok = await confirm({
+      title: `Delete order ${label}?`,
+      message: "This permanently removes it and its receipt.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await deleteOrder(id);
     await load();
   }
@@ -103,6 +111,7 @@ export default function OrderHistoryPage() {
 }
 
 function OrderDetailModal({ full, onClose, reload, onDelete }: { full: OrderFull; onClose: () => void; reload: () => Promise<void>; onDelete: () => Promise<void> }) {
+  const { confirm } = useConfirm();
   const [busy, setBusy] = useState(false);
   const allLines = full.rounds.flatMap((r) => r.order_line_items);
   const totals = billTotals(allLines, full.order.service_charge_pct, full.discount ? { type: full.discount.type, value: full.discount.value } : null);
@@ -159,7 +168,10 @@ function OrderDetailModal({ full, onClose, reload, onDelete }: { full: OrderFull
           </button>
           <button
             disabled={busy}
-            onClick={async () => { if (confirm("Delete this order permanently?")) await onDelete(); }}
+            onClick={async () => {
+              const ok = await confirm({ title: "Delete this order?", message: "It is permanently removed, along with its receipt.", confirmLabel: "Delete", danger: true });
+              if (ok) await onDelete();
+            }}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-tint px-3 py-2.5 text-sm font-semibold text-brand hover:bg-brand-tint-2"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span> Delete order

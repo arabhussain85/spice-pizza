@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { MenuCategory, MenuItem } from "@/lib/types";
 import { formatRs } from "@/lib/money";
 import { Button, Card, cn } from "@/components/ui";
-import { ItemPhoto } from "@/components/ItemPhoto";
+import { useConfirm } from "@/components/Confirm";
 import { addModifier, deleteModifier, deleteMenuItem, toggleMenuItemLive, upsertMenuItem } from "../actions";
 
 type Row = MenuItem & { menu_categories: { name: string; tab_group: string | null } | null };
@@ -97,12 +97,12 @@ export default function MenuAdminPage() {
       <div className="mt-4 space-y-2">
         {visible.map((it) => (
           <Card key={it.id} className="flex items-center gap-3 p-2.5">
-            <ItemPhoto src={it.photo_url} alt={it.name} className="h-12 w-12 shrink-0 rounded-lg" />
             <button className="min-w-0 flex-1 text-left" onClick={() => setEditing(it)}>
               <div className="truncate text-sm font-semibold">{it.name}</div>
               <div className="truncate text-xs text-muted">
                 {it.menu_categories?.name}
                 {it.size_label ? ` · ${it.size_label}` : ""}
+                {it.description ? ` · ${it.description}` : ""}
               </div>
             </button>
             <div className="text-right">
@@ -199,11 +199,12 @@ function MenuItemSheet({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const { confirm } = useConfirm();
   const [name, setName] = useState(item.name ?? "");
   const [price, setPrice] = useState(item.price != null ? String(item.price) : "");
   const [categoryId, setCategoryId] = useState(item.category_id ?? cats[0]?.id ?? "");
   const [size, setSize] = useState(item.size_label ?? "");
-  const [photo, setPhoto] = useState(item.photo_url ?? "");
+  const [description, setDescription] = useState(item.description ?? "");
   const [live, setLive] = useState(item.is_live ?? true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -219,7 +220,8 @@ function MenuItemSheet({
         name: name.trim(),
         price: Number(price),
         size_label: size.trim() || null,
-        photo_url: photo.trim() || null,
+        description: description.trim() || null,
+        photo_url: item.photo_url ?? null,
         is_live: live,
         group_key: item.group_key ?? null,
       });
@@ -237,23 +239,12 @@ function MenuItemSheet({
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-hairline" />
         <h3 className="text-lg font-bold">{isEdit ? "Edit menu item" : "Add menu item"}</h3>
 
-        <div className="mt-4 flex gap-3">
-          <ItemPhoto src={photo} alt={name} className="h-20 w-20 shrink-0 rounded-xl" />
-          <div className="flex-1">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Item name"
-              className="w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
-            />
-            <input
-              value={photo}
-              onChange={(e) => setPhoto(e.target.value)}
-              placeholder="Photo URL"
-              className="mt-2 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-xs outline-none focus:border-brand/50"
-            />
-          </div>
-        </div>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Item / deal name"
+          className="mt-4 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+        />
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <input
@@ -284,6 +275,17 @@ function MenuItemSheet({
           ))}
         </select>
 
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="Description / deal contents"
+          className="mt-2 w-full resize-none rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+        />
+        <p className="mt-1 text-xs text-muted">
+          For a deal, list what&apos;s included, comma-separated — it prints on the kitchen slip (e.g. “2 Pizza, Fries, 1.5L Drink”).
+        </p>
+
         <label className="mt-3 flex items-center justify-between">
           <span className="text-sm font-medium">Show on counter menu</span>
           <button
@@ -309,7 +311,13 @@ function MenuItemSheet({
             <Button
               variant="outline"
               onClick={async () => {
-                if (confirm("Delete this item?")) {
+                const ok = await confirm({
+                  title: "Delete this item?",
+                  message: `“${name}” will be removed from the menu.`,
+                  confirmLabel: "Delete",
+                  danger: true,
+                });
+                if (ok) {
                   await deleteMenuItem(item.id!);
                   await onSaved();
                 }
