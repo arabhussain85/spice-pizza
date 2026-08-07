@@ -10,6 +10,7 @@ import { formatClock } from "@/lib/time";
 import { billTotals } from "@/lib/order-math";
 import { fetchActivePromotions, fetchMenuMeta, promoTotals, type Promotion, type MenuMeta } from "@/lib/promotions";
 import { cn } from "@/components/ui";
+import { BottomSheet } from "@/components/BottomSheet";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
 export function BillView({ orderId }: { orderId: string }) {
@@ -565,15 +566,5 @@ function PaymentModal({
 }
 
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-sm bg-white rounded-2xl p-6 shadow-modal border border-[#e4beba] max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
-  );
+  return <BottomSheet onClose={onClose}>{children}</BottomSheet>;
 }

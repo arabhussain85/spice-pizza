@@ -8,6 +8,7 @@ import { startTakeaway, startDelivery, type CustomerInfo } from "./actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 import { formatRs } from "@/lib/money";
 import { cn } from "@/components/ui";
+import { BottomSheet } from "@/components/BottomSheet";
 
 type NewType = "takeaway" | "delivery" | null;
 
@@ -166,12 +167,8 @@ function CustomerModal({
   const isDelivery = type === "delivery";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <BottomSheet onClose={onClose}>
+      <div>
         <div className="mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-[#af101a]" style={{ fontSize: "24px" }}>
             {isDelivery ? "delivery_dining" : "takeout_dining"}
@@ -233,6 +230,6 @@ function CustomerModal({
           </button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 }

@@ -5,6 +5,7 @@ import type { MenuItem, MenuProduct } from "@/lib/types";
 import { formatRs } from "@/lib/money";
 import { Button, cn } from "@/components/ui";
 import { ItemPhoto } from "@/components/ItemPhoto";
+import { BottomSheet } from "@/components/BottomSheet";
 
 export interface AddSelection {
   variant: MenuItem;
@@ -35,14 +36,8 @@ export function ItemModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <BottomSheet onClose={onCancel}>
+      <div>
         <div className="flex gap-4">
           <ItemPhoto src={product.photo_url} alt={product.name} className="h-20 w-20 shrink-0 rounded-xl" />
           <div className="min-w-0">
@@ -142,6 +137,6 @@ export function ItemModal({
           </Button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 }
