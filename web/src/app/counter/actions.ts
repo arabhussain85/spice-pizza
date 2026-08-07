@@ -105,6 +105,12 @@ async function startOffTable(
   type: "takeaway" | "delivery",
   customer: CustomerInfo,
 ): Promise<{ orderId: string }> {
+  const name = customer.name?.trim();
+  const phone = customer.phone?.trim();
+  const address = customer.address?.trim();
+  if (!name || !phone) throw new Error("Customer name and phone are required.");
+  if (type === "delivery" && !address) throw new Error("Delivery address is required.");
+
   const supa = createAdminClient();
   const staff = await sessionStaff();
   const shiftId = await ensureOpenShift(supa, staff.name);

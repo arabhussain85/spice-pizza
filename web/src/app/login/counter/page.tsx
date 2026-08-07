@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { validateCounterPin } from "@/app/admin/settings-actions";
+import { counterLogin } from "@/app/admin/settings-actions";
 
 const NUMPAD = [
   ["1", "2", "3"],
@@ -44,11 +44,11 @@ export default function CounterPinLoginPage() {
   }, []);
 
   async function validatePin(value: string) {
-    const ok = await validateCounterPin(value);
-    if (ok) {
-      // Set cookie valid for 8 hours
+    const res = await counterLogin(value);
+    if (res.ok && res.token) {
+      // Signed token cookie, valid for 8 hours
       const expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString();
-      document.cookie = `counter_pin=valid; path=/; expires=${expires}; SameSite=Strict`;
+      document.cookie = `counter_pin=${res.token}; path=/; expires=${expires}; SameSite=Strict`;
       router.push("/counter");
       router.refresh();
     } else {

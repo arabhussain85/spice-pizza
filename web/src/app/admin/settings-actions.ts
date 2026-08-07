@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { signCounterToken } from "@/lib/counter-session";
 
 /** Update global pricing/permission settings (service role — bypasses RLS). */
 export async function updateServiceSettings(patch: {
@@ -46,4 +47,10 @@ export async function validateCounterPin(pin: string): Promise<boolean> {
   const supa = createAdminClient();
   const { data } = await supa.from("settings").select("counter_pin").eq("id", 1).maybeSingle();
   return pin === ((data?.counter_pin as string) ?? "1234");
+}
+
+/** Validate the PIN and, on success, return a signed session token for the cookie. */
+export async function counterLogin(pin: string): Promise<{ ok: boolean; token?: string }> {
+  if (!(await validateCounterPin(pin))) return { ok: false };
+  return { ok: true, token: await signCounterToken() };
 }

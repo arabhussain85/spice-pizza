@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy-session";
+import { verifyCounterToken } from "@/lib/counter-session";
 
 /**
  * Dual-portal route protection.
@@ -29,12 +30,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ── Cron endpoints self-protect via CRON_SECRET header — leave untouched ──
+  if (pathname.startsWith("/api/cron")) {
+    return NextResponse.next();
+  }
+
   const redirectTo = (path: string) => {
     const url = request.nextUrl.clone();
     url.pathname = path;
     url.search = "";
     return NextResponse.redirect(url);
   };
+
+  const isOwner = async () => {
+    const { user } = await updateSession(request);
+    return (user?.app_metadata as { role?: string } | undefined)?.role === "owner";
+  };
+  const counterOk = await verifyCounterToken(request.cookies.get("counter_pin")?.value);
 
   // ── ADMIN PORTAL: Supabase session + owner role ───────────────────────────
   if (pathname.startsWith("/admin")) {
@@ -45,14 +57,19 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // ── COUNTER PORTAL: PIN cookie check ─────────────────────────────────────
+  // ── COUNTER PORTAL: signed PIN-session cookie ────────────────────────────
   if (pathname.startsWith("/counter")) {
-    const pinCookie = request.cookies.get("counter_pin");
-    if (pinCookie?.value !== "valid") return redirectTo("/login/counter");
+    if (!counterOk) return redirectTo("/login/counter");
     return NextResponse.next();
   }
 
-  // ── Root / → redirect to counter login (default entry point) ─────────────
+  // ── API: allow a valid counter session OR an owner; otherwise 401 ────────
+  if (pathname.startsWith("/api")) {
+    if (counterOk || (await isOwner())) return NextResponse.next();
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  // ── Root / → login selector (default entry point) ────────────────────────
   if (pathname === "/") {
     return redirectTo("/login");
   }

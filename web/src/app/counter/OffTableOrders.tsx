@@ -175,6 +175,8 @@ function CustomerModal({
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
   const isDelivery = type === "delivery";
+  const canStart = name.trim() !== "" && phone.trim() !== "" && (!isDelivery || address.trim() !== "");
+  const req = <span className="text-[#af101a]"> *</span>;
 
   return (
     <BottomSheet onClose={onClose}>
@@ -186,16 +188,16 @@ function CustomerModal({
           <h3 className="text-lg font-bold text-[#1A1A1A]">New {isDelivery ? "Delivery" : "Takeaway"}</h3>
         </div>
 
-        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Customer name</label>
+        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Customer name{req}</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Optional"
+          placeholder="Required"
           autoFocus
           className="mb-3 w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none transition-colors focus:border-[#af101a]"
         />
 
-        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Phone {isDelivery ? "" : "(optional)"}</label>
+        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Phone{req}</label>
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -206,7 +208,7 @@ function CustomerModal({
 
         {isDelivery && (
           <>
-            <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Delivery address</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Delivery address{req}</label>
             <textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -225,11 +227,11 @@ function CustomerModal({
             Cancel
           </button>
           <button
-            disabled={busy}
+            disabled={busy || !canStart}
             onClick={async () => {
               setBusy(true);
               try {
-                await onStart({ name, phone, address: isDelivery ? address : undefined });
+                await onStart({ name: name.trim(), phone: phone.trim(), address: isDelivery ? address.trim() : undefined });
               } finally {
                 setBusy(false);
               }
