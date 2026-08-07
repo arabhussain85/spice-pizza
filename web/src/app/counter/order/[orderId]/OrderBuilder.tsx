@@ -154,8 +154,10 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
   const visibleProducts: MenuProduct[] = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (q) return menu.flatMap((c) => c.products).filter((p) => p.name.toLowerCase().includes(q));
-    return menu.find((c) => c.category.id === activeCat)?.products ?? [];
+    // extra topping is added inside the pizza popup, so hide its standalone card
+    const notTopping = (p: MenuProduct) => p.group_key !== "extra-topping";
+    if (q) return menu.flatMap((c) => c.products).filter((p) => notTopping(p) && p.name.toLowerCase().includes(q));
+    return (menu.find((c) => c.category.id === activeCat)?.products ?? []).filter(notTopping);
   }, [menu, activeCat, search]);
 
   async function handleAdd(sel: AddSelection) {
@@ -169,6 +171,18 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
       note: sel.note || null,
       modifiers: sel.modifiers,
     });
+    if (sel.extraTopping && sel.extraTopping.quantity > 0) {
+      const t = sel.extraTopping.variant;
+      await addLineItem(orderId, {
+        menuItemId: t.id,
+        name: t.name,
+        size: t.size_label,
+        unitPrice: t.price,
+        quantity: sel.extraTopping.quantity,
+        note: null,
+        modifiers: [],
+      });
+    }
     await refetchOrder();
   }
   const removeItem = useCallback(async (id: string) => { await deleteLineItem(id); await refetchOrder(); }, [refetchOrder]);
@@ -265,7 +279,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
           {!search && (
             <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
-              {menu.filter((c) => c.products.length).map((c) => (
+              {menu.filter((c) => c.products.length && c.category.name !== "Add-ons").map((c) => (
                 <button
                   key={c.category.id}
                   onClick={() => setActiveCat(c.category.id)}
@@ -386,9 +400,22 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
         </div>
       )}
 
-      {modalProduct && (
-        <ItemModal product={modalProduct} modifiers={modifiers} onCancel={() => setModalProduct(null)} onAdd={handleAdd} />
-      )}
+      {modalProduct && (() => {
+        const cat = menu.find((c) => c.category.id === modalProduct.category_id)?.category;
+        const isPizza = cat?.tab_group === "Pizza" && cat.name !== "Add-ons" && modalProduct.group_key !== "extra-topping";
+        const topping = isPizza
+          ? menu.flatMap((c) => c.products).find((p) => p.group_key === "extra-topping")
+          : undefined;
+        return (
+          <ItemModal
+            product={modalProduct}
+            modifiers={modifiers}
+            extraToppingVariants={topping?.variants}
+            onCancel={() => setModalProduct(null)}
+            onAdd={handleAdd}
+          />
+        );
+      })()}
     </div>
   );
 }
