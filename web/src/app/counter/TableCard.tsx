@@ -7,6 +7,7 @@ import { formatRs } from "@/lib/money";
 import { formatDuration } from "@/lib/time";
 import { Icon } from "@/components/Icon";
 import { startOrder } from "./actions";
+import { cancelOrder } from "@/app/admin/order-actions";
 
 export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
   const router = useRouter();
@@ -17,6 +18,14 @@ export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
     startTransition(async () => {
       const { orderId } = await startOrder(row.table.id);
       router.push(`/counter/order/${orderId}`);
+    });
+  }
+
+  function onCancel() {
+    if (!confirm(`Cancel Table ${row.table.number}'s order?\nThe table is freed and nothing is charged.`)) return;
+    const reason = window.prompt("Cancellation reason (optional):") || undefined;
+    startTransition(async () => {
+      await cancelOrder(row.order!.id, reason);
     });
   }
 
@@ -70,6 +79,15 @@ export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
               className="flex h-touch-target flex-1 items-center justify-center gap-2 rounded-lg bg-primary font-label-bold text-label-bold text-on-primary shadow-sm transition-colors duration-100 hover:bg-surface-tint active:scale-95"
             >
               <Icon name="receipt_long" /> Bill &amp; close
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={pending}
+              title="Cancel order"
+              aria-label="Cancel order"
+              className="flex h-touch-target w-11 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container text-tertiary transition-colors duration-100 hover:border-primary/40 hover:bg-status-occupied/10 hover:text-primary active:scale-95 disabled:opacity-50"
+            >
+              <Icon name="cancel" />
             </button>
           </div>
         </>
