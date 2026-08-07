@@ -102,6 +102,18 @@ export function AdminNav() {
                 <Icon name="print" className="text-base" />
                 <span>Printer</span>
               </Link>
+              <Link
+                href="/admin/settings"
+                className={cn(
+                  "flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all",
+                  pathname === "/admin/settings" || pathname === "/admin/dev"
+                    ? "bg-[#af101a] text-white font-bold"
+                    : "text-[#605e5b] hover:text-[#1A1A1A] hover:bg-[#ffe9e7]"
+                )}
+              >
+                <Icon name="settings" className="text-base" />
+                <span>Settings</span>
+              </Link>
             </div>
 
             {/* Desktop: logout button in header */}
