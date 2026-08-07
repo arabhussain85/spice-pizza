@@ -13,7 +13,21 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
   const supa = createAdminClient();
-  const full = await fetchOrderFull(supa, orderId);
+
+  // Fetch the order, promotions, menu meta, receipt config and latest cash payment in parallel.
+  const [full, promos, menuMeta, cfg, paysRes] = await Promise.all([
+    fetchOrderFull(supa, orderId),
+    fetchActivePromotions(supa),
+    fetchMenuMeta(supa),
+    fetchReceiptConfig(supa),
+    supa
+      .from("payments")
+      .select("method, tendered, created_at")
+      .eq("order_id", orderId)
+      .not("tendered", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
+  ]);
   if (!full) return new Response("Order not found", { status: 404 });
 
   const allLines = full.rounds.flatMap((r) => r.order_line_items);
@@ -23,22 +37,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     full.order.service_charge_pct,
     full.discount ? { type: full.discount.type, value: full.discount.value } : null,
   );
-  const promos = await fetchActivePromotions(supa);
-  const promo = promoTotals(live, promos, await fetchMenuMeta(supa));
-  const cfg = await fetchReceiptConfig(supa);
+  const promo = promoTotals(live, promos, menuMeta);
 
   const serviceAmt = cfg.showService ? totals.service : 0;
   const netTotal = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
 
-  // Cash tendered / change — shown only once a cash payment with a tendered amount is recorded.
-  const { data: pays } = await supa
-    .from("payments")
-    .select("method, tendered, created_at")
-    .eq("order_id", orderId)
-    .not("tendered", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  const cashPay = (pays ?? [])[0] as { method: string; tendered: number } | undefined;
+  const cashPay = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
 
   const ot = full.order.order_type;
   const tableLabel = ot === "takeaway" ? "Takeaway" : ot === "delivery" ? "Delivery" : `Table #${full.table?.number ?? "?"}`;

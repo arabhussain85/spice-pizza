@@ -188,18 +188,22 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
   const removeItem = useCallback(async (id: string) => { await deleteLineItem(id); await refetchOrder(); }, [refetchOrder]);
 
   async function handleSend() {
+    // Open the print tab synchronously (inside the click) so browsers don't popup-block it.
+    const printWin = window.open("", "_blank");
     setSending(true);
     setBanner(null);
     try {
       const res = await sendToKitchen(orderId);
       if (!res.ok) {
+        printWin?.close();
         setBanner(res.error);
         return;
       }
-      try {
-        window.open(`/api/print/round/${res.roundId}`, "_blank");
-      } catch {
-        setBanner("Printer offline — slip saved, open the bill to reprint.");
+      const url = `/api/print/round/${res.roundId}`;
+      if (printWin) printWin.location.href = url;
+      else {
+        window.open(url, "_blank");
+        setBanner("Allow pop-ups to auto-print, or reprint from the bill.");
       }
       await refetchOrder();
       setCartOpen(false);

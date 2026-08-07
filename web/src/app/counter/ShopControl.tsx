@@ -33,21 +33,29 @@ export function ShopControl() {
   }
 
   async function handleClose() {
+    // Open the print tab now (on the click) so it isn't popup-blocked after the awaits.
+    const printWin = window.open("", "_blank");
     const ok = await confirm({
       title: "Close the shop for today?",
       message: "This prints the daily Z-report and resets order tokens to #1.",
       confirmLabel: "Close shop",
       cancelLabel: "Not yet",
     });
-    if (!ok) return;
+    if (!ok) {
+      printWin?.close();
+      return;
+    }
     setBusy(true);
     try {
       const res = await closeShift();
       if (!res.ok) {
+        printWin?.close();
         await notify({ title: "Can't close yet", message: res.error, danger: true });
         return;
       }
-      window.open(`/api/print/zreport/${res.shiftId}`, "_blank");
+      const url = `/api/print/zreport/${res.shiftId}`;
+      if (printWin) printWin.location.href = url;
+      else window.open(url, "_blank");
       await refresh();
     } finally {
       setBusy(false);

@@ -20,7 +20,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     .maybeSingle();
   if (!round) return new Response("Round not found", { status: 404 });
 
-  const full = await fetchOrderFull(supa, round.order_id);
+  // Fetch the order + promotions + menu meta + receipt config in parallel.
+  const [full, promos, menuMeta, cfg] = await Promise.all([
+    fetchOrderFull(supa, round.order_id),
+    fetchActivePromotions(supa),
+    fetchMenuMeta(supa),
+    fetchReceiptConfig(supa),
+  ]);
   if (!full) return new Response("Order not found", { status: 404 });
 
   const ot = full.order.order_type;
@@ -65,9 +71,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     full.order.service_charge_pct,
     full.discount ? { type: full.discount.type, value: full.discount.value } : null,
   );
-  const promos = await fetchActivePromotions(supa);
-  const promo = promoTotals(live, promos, await fetchMenuMeta(supa));
-  const cfg = await fetchReceiptConfig(supa);
+  const promo = promoTotals(live, promos, menuMeta);
   const serviceAmt = cfg.showService ? totals.service : 0;
   const netTotal = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
 

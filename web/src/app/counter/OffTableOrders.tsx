@@ -175,8 +175,10 @@ function CustomerModal({
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
   const isDelivery = type === "delivery";
-  const canStart = name.trim() !== "" && phone.trim() !== "" && (!isDelivery || address.trim() !== "");
+  // Takeaway: only the name is required. Delivery: name + address required. Phone always optional.
+  const canStart = name.trim() !== "" && (!isDelivery || address.trim() !== "");
   const req = <span className="text-[#af101a]"> *</span>;
+  const opt = <span className="font-normal text-[#605e5b]"> (optional)</span>;
 
   return (
     <BottomSheet onClose={onClose}>
@@ -197,7 +199,7 @@ function CustomerModal({
           className="mb-3 w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none transition-colors focus:border-[#af101a]"
         />
 
-        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Phone{req}</label>
+        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Phone{opt}</label>
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}

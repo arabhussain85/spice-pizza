@@ -108,7 +108,7 @@ async function startOffTable(
   const name = customer.name?.trim();
   const phone = customer.phone?.trim();
   const address = customer.address?.trim();
-  if (!name || !phone) throw new Error("Customer name and phone are required.");
+  if (!name) throw new Error("Customer name is required.");
   if (type === "delivery" && !address) throw new Error("Delivery address is required.");
 
   const supa = createAdminClient();
