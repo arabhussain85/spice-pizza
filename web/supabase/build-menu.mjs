@@ -17,7 +17,7 @@ function sized(catId, name, sizes, desc = null) { const g = slug(name); for (con
 function pizzaList(catId, sizePricing, list) {
   for (const p of list) { const g = slug(p.name); for (const s of sizePricing) item(catId, g, p.name, s.size, s.price, p.ingredients ?? null); }
 }
-function flavors(catId, list, price) { for (const f of list) item(catId, slug(f), f, null, price); }
+function flavorProduct(catId, name, list, price, clean = (x) => x) { const g = slug(name); for (const f of list) item(catId, g, name, clean(f), price); }
 
 // ---------- PIZZA ----------
 const pizzasSizes = [{ size: "Small", price: 550 }, { size: "Medium", price: 1050 }, { size: "Large", price: 1350 }, { size: "Family", price: 1550 }];
@@ -54,6 +54,7 @@ sized(cat("Square Pizza", "Pizza"), "Square Pizza", [{ size: "Small", price: 900
 sized(cat("Double Flavour Pizza", "Pizza"), "Double Flavour Pizza", spiceSizes);
 sized(cat("Four Flavour Pizza", "Pizza"), "Four Flavour Pizza", spiceSizes);
 simple(cat("Burger Pizza", "Pizza"), [{ name: "Burger Pizza (Small)", price: 750 }]);
+sized(cat("Add-ons", "Pizza"), "Extra Topping", [{ size: "Small", price: 99 }, { size: "Medium", price: 149 }, { size: "Large", price: 199 }, { size: "Family", price: 249 }], "Add to any pizza");
 
 // ---------- DEALS ----------
 const fam = cat("Family Deals", "Deals");
@@ -146,8 +147,10 @@ simple(cat("Sweets", "Sides"), [{ name: "Molten Lava", price: 550 }]);
 const drinks = cat("Drinks", "Beverages");
 simple(drinks, [{ name: "NR Drink", price: 80 }, { name: "Half Ltr Drink", price: 110 }, { name: "1 Ltr Drink", price: 150 }, { name: "1.5 Ltr Drink", price: 200 }]);
 sized(drinks, "Mineral Water", [{ size: "Small", price: 60 }, { size: "Large", price: 120 }]);
-flavors(cat("Spice Ice Shake", "Beverages"), ["Pista Ice Shake", "Kulfa Ice Shake", "Strawberry Shake", "Vanilla Ice Shake", "Chocolate Ice Shake", "Mango Ice Shake", "Oreo Shake", "Caramel Crunch Shake", "Kit Kat Ice Shake"], 450);
-flavors(cat("Fresh Shake", "Beverages"), ["Mango", "Peach", "Falsa", "Strawberry", "Mint Margarita", "Strawberry Margarita"], 350);
+flavorProduct(cat("Spice Ice Shake", "Beverages"), "Spice Ice Shake",
+  ["Pista Ice Shake", "Kulfa Ice Shake", "Strawberry Shake", "Vanilla Ice Shake", "Chocolate Ice Shake", "Mango Ice Shake", "Oreo Shake", "Caramel Crunch Shake", "Kit Kat Ice Shake"],
+  450, (f) => f.replace(/\s*(ice\s*)?shake$/i, "").trim());
+flavorProduct(cat("Fresh Shake", "Beverages"), "Fresh Shake", ["Mango", "Peach", "Falsa", "Strawberry", "Mint Margarita", "Strawberry Margarita"], 350);
 const ic = cat("Ice Cream", "Beverages");
 for (const f of ["Strawberry", "Kulfa", "Mango", "Chocolate", "Vanilla", "Pista", "Caramel Crunch"]) {
   const g = slug("ice cream " + f);
@@ -175,9 +178,10 @@ update settings set
   brand_name='Spice Pizza',
   receipt_tagline='Best Food in Town',
   receipt_address='A-One Market Opp. Dhoniki Phatak, Ahmad Nagar Road Wazirabad.',
-  receipt_phone='0341-6297065 / WhatsApp 0313-6597065'
+  receipt_phone='0341-6297065 / WhatsApp 0313-6597065',
+  receipt_footer='Fast & Free Delivery  -  Follow us @spicepizza'
 where id=1;
 commit;
 `;
-writeFileSync("/tmp/menu.sql", sql);
+writeFileSync(new URL("./menu-seed.sql", import.meta.url), sql);
 console.log(`categories=${cats.length} items=${items.length}`);

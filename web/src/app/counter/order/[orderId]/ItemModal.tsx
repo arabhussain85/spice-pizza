@@ -30,6 +30,8 @@ export function ItemModal({
   const [note, setNote] = useState("");
   const [selectedMods, setSelectedMods] = useState<string[]>([]);
   const multiSize = product.variants.length > 1;
+  // pizzas differ in price across sizes; shakes share one price across flavours
+  const optionLabel = product.variants.every((v) => v.price === product.variants[0].price) ? "Flavour" : "Size";
 
   function toggleMod(label: string) {
     setSelectedMods((prev) => (prev.includes(label) ? prev.filter((m) => m !== label) : [...prev, label]));
@@ -54,7 +56,7 @@ export function ItemModal({
 
         {multiSize && (
           <div className="mt-4">
-            <div className="mb-1.5 text-sm font-medium">Size</div>
+            <div className="mb-1.5 text-sm font-medium">{optionLabel}</div>
             <div className="flex flex-wrap gap-2">
               {product.variants.map((v) => (
                 <button
