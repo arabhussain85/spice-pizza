@@ -148,10 +148,13 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   }
   d.dashed(y); y -= 12;
 
-  // ---- items: #  ITEM  QTY  PRICE ----
+  // ---- items: #  ITEM  QTY  PRICE (ruled columns) ----
   const ITEM_X = LEFT + 15;
   const QTY_X = 150;
-  const ITEM_MAX = QTY_X - ITEM_X - 6;
+  const ITEM_MAX = QTY_X - ITEM_X - 14;
+  const COL1 = QTY_X - 8; // divider between ITEM and QTY
+  const COL2 = QTY_X + 24; // divider between QTY and PRICE
+  const tableTop = y + 11;
   d.at("#", LEFT, y, 8, bold, INK);
   d.at("ITEM", ITEM_X, y, 8, bold, INK);
   d.at("QTY", QTY_X, y, 8, bold, INK);
@@ -166,7 +169,7 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
     lines.forEach((ln, i) => {
       if (i === 0) {
         d.at(`${sr}`, LEFT, y, 9, font, MUTED);
-        d.at(String(it.qty), QTY_X + 5, y, 9, font, INK);
+        d.at(String(it.qty), QTY_X + 6, y, 9, font, INK);
         d.right(it.amount, y, 9, font, INK);
       }
       d.at(ln, ITEM_X, y, 9, bold, INK);
@@ -174,6 +177,11 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
     });
     if (slip.showItemNotes && it.sub) { d.at(`» ${it.sub}`, ITEM_X, y, 7.5, font, MUTED); y -= 10; }
     y -= 4;
+  }
+  // vertical column rules spanning the item table
+  const tableBottom = y + 8;
+  for (const vx of [COL1, COL2]) {
+    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 0.6, color: RULE });
   }
 
   // ---- totals ----
@@ -212,6 +220,7 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
 export interface KitchenItem {
   qty: number;
   name: string;
+  amount?: string; // line total, e.g. "Rs 3,000"
   modifiers?: string[];
   contents?: string[];
 }
@@ -221,6 +230,7 @@ export interface KitchenSlip {
   token?: number | null;
   time: string;
   items: KitchenItem[];
+  total?: string;
 }
 
 export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
@@ -231,12 +241,13 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const logoW = 40;
   const logoH = (logoW * LOGO_H) / LOGO_W;
 
-  let h = M + logoH + 6 + 26 + 16 + 12 + (slip.token != null ? 22 : 0);
+  const KNAME_MAX = RIGHT - LEFT - 52; // leave room for the price column
+  let h = M + logoH + 6 + 26 + 16 + 12 + (slip.token != null ? 22 : 0) + 12;
   for (const it of slip.items) {
-    h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT).length) * 13;
+    h += Math.max(1, wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, KNAME_MAX).length) * 13;
     h += (it.modifiers?.length ?? 0) * 12 + (it.contents?.length ?? 0) * 12 + 6;
   }
-  h += 12 + 26 + M;
+  h += (slip.total ? 28 : 0) + 12 + 26 + M;
   const page = doc.addPage([W, Math.max(h, 220)]);
   const d = drawing(page);
   let y = page.getHeight() - M;
@@ -249,13 +260,18 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   d.left(slip.table, y, 10, bold, INK);
   d.center(`Order #${slip.orderNumber}`, y, 9, font, INK);
   d.right(slip.time, y, 9, font, INK);
-  y -= 8; d.dashed(y); y -= 16;
+  y -= 10;
+  d.left("ITEM", y, 8, bold, MUTED);
+  d.right("PRICE", y, 8, bold, MUTED);
+  y -= 6; d.dashed(y); y -= 14;
 
   for (const it of slip.items) {
-    for (const ln of wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, RIGHT - LEFT)) {
+    const lines = wrap(`${it.qty}x ${it.name.toUpperCase()}`, bold, 10, KNAME_MAX);
+    lines.forEach((ln, i) => {
       d.left(ln, y, 10, bold, INK);
+      if (i === 0 && it.amount) d.right(it.amount, y, 10, bold, INK);
       y -= 13;
-    }
+    });
     for (const m of it.modifiers ?? []) {
       d.at(`*** ${m.toUpperCase()} ***`, LEFT + 12, y, 9, bold, RED);
       y -= 12;
@@ -267,6 +283,12 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
     y -= 6;
   }
 
+  if (slip.total) {
+    d.solid(y); y -= 16;
+    d.left("TOTAL", y, 11, bold, INK);
+    d.right(slip.total, y, 12, bold, RED);
+    y -= 14;
+  }
   d.dashed(y); y -= 16;
   d.center("*** SPICE PIZZA KITCHEN ***", y, 9, bold, INK); y -= 12;
   d.center("End of Order", y, 8, font, MUTED);

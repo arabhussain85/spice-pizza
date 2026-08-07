@@ -29,6 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
 
   const roundItems = ((round.order_line_items ?? []) as Array<{
     quantity: number;
+    unit_price: number;
     name_snapshot: string;
     size_snapshot: string | null;
     note: string | null;
@@ -36,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     is_voided: boolean;
     menu_items: { description: string | null } | null;
   }>).filter((li) => !li.is_voided);
+  const kitchenTotal = roundItems.reduce((s, li) => s + li.unit_price * li.quantity, 0);
 
   // ── Kitchen slip (this round) ──────────────────────────────────────────────
   const kitchen: KitchenSlip = {
@@ -46,12 +48,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
     items: roundItems.map((li) => ({
       qty: li.quantity,
       name: `${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`,
+      amount: formatRs(li.unit_price * li.quantity),
       modifiers: [...(li.modifiers ?? []), ...(li.note ? [li.note] : [])],
       contents:
         li.menu_items?.description && /deal/i.test(li.name_snapshot)
           ? String(li.menu_items.description).split(",").map((s) => s.trim()).filter(Boolean)
           : undefined,
     })),
+    total: formatRs(kitchenTotal),
   };
 
   // ── Customer bill (whole order so far) ─────────────────────────────────────
