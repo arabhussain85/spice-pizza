@@ -12,7 +12,7 @@ import { useConfirm } from "@/components/Confirm";
 
 export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
   const router = useRouter();
-  const { prompt } = useConfirm();
+  const { prompt, notify } = useConfirm();
   const [pending, startTransition] = useTransition();
   const occupied = row.table.status === "occupied" && row.order;
 
@@ -24,18 +24,20 @@ export function TableCard({ row, now }: { row: TableGridRow; now: Date }) {
   }
 
   async function onCancel() {
-    const reason = await prompt({
+    const pin = await prompt({
       title: `Cancel Table ${row.table.number}'s order?`,
-      message: "The table is freed and nothing is charged.",
-      inputLabel: "Reason (optional)",
-      placeholder: "e.g. wrong order",
+      message: "The table is freed and nothing is charged. Enter the owner PIN to confirm.",
+      inputLabel: "Owner PIN",
+      placeholder: "PIN",
+      required: true,
       confirmLabel: "Cancel order",
       cancelLabel: "Keep order",
       danger: true,
     });
-    if (reason === null) return;
+    if (!pin) return;
     startTransition(async () => {
-      await cancelOrder(row.order!.id, reason || undefined);
+      const res = await cancelOrder(row.order!.id, { pin });
+      if (!res.ok) await notify({ title: "Not cancelled", message: res.error, danger: true });
     });
   }
 

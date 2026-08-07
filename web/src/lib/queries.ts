@@ -79,18 +79,20 @@ export interface OffTableOrder {
   order_number: string;
   order_type: "takeaway" | "delivery";
   token_number: number | null;
+  type_number: number | null;
   customer_name: string | null;
   customer_phone: string | null;
   opened_at: string;
   rounds: number;
   runningTotal: number;
+  items: { qty: number; name: string }[];
 }
 
 export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTableOrder[]> {
   const { data, error } = await supa
     .from("orders")
     .select(
-      "id,order_number,order_type,token_number,customer_name,customer_phone,opened_at,order_rounds(id,order_line_items(quantity,unit_price,is_voided))",
+      "id,order_number,order_type,token_number,type_number,customer_name,customer_phone,opened_at,order_rounds(id,order_line_items(quantity,unit_price,name_snapshot,size_snapshot,is_voided))",
     )
     .eq("status", "open")
     .in("order_type", ["takeaway", "delivery"])
@@ -102,6 +104,7 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
     order_number: string;
     order_type: "takeaway" | "delivery";
     token_number: number | null;
+    type_number: number | null;
     customer_name: string | null;
     customer_phone: string | null;
     opened_at: string;
@@ -116,11 +119,16 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
       order_number: o.order_number,
       order_type: o.order_type,
       token_number: o.token_number,
+      type_number: o.type_number,
       customer_name: o.customer_name,
       customer_phone: o.customer_phone,
       opened_at: o.opened_at,
       rounds: rounds.length,
       runningTotal: sumLines(lines),
+      items: lines.map((li) => ({
+        qty: li.quantity,
+        name: `${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`,
+      })),
     };
   });
 }

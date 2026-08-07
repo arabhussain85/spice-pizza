@@ -41,9 +41,21 @@ export async function toggleVoidLineItem(id: string, voided: boolean, reason?: s
   return { ok: true };
 }
 
-/** Cancel an order: mark it void (kept for records, no payment), free the table. */
-export async function cancelOrder(id: string, reason?: string) {
+/**
+ * Cancel an order — requires the owner PIN. Marks it void (kept for records, no
+ * payment) and frees the table. Returns { ok:false } on a missing/wrong PIN.
+ */
+export async function cancelOrder(
+  id: string,
+  opts: { pin: string; reason?: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supa = createAdminClient();
+
+  const pin = opts.pin?.trim();
+  if (!pin) return { ok: false, error: "Owner PIN required." };
+  const { data: owner } = await supa.from("staff").select("id").eq("role", "owner").eq("pin", pin).limit(1);
+  if (!owner || owner.length === 0) return { ok: false, error: "Incorrect owner PIN." };
+
   const { data: o } = await supa.from("orders").select("table_id").eq("id", id).maybeSingle();
   const { error } = await supa
     .from("orders")
@@ -53,15 +65,14 @@ export async function cancelOrder(id: string, reason?: string) {
   if (o?.table_id) {
     await supa.from("restaurant_tables").update({ status: "free", opened_at: null }).eq("id", o.table_id);
   }
-  if (reason) {
-    const { data: rounds } = await supa.from("order_rounds").select("id").eq("order_id", id);
-    const roundIds = ((rounds ?? []) as { id: string }[]).map((r) => r.id);
-    if (roundIds.length) {
-      await supa
-        .from("order_line_items")
-        .update({ is_voided: true, void_reason: `Cancelled: ${reason}`, voided_at: new Date().toISOString() })
-        .in("round_id", roundIds);
-    }
+
+  const { data: rounds } = await supa.from("order_rounds").select("id").eq("order_id", id);
+  const roundIds = ((rounds ?? []) as { id: string }[]).map((r) => r.id);
+  if (roundIds.length) {
+    await supa
+      .from("order_line_items")
+      .update({ is_voided: true, void_reason: `Cancelled${opts.reason ? `: ${opts.reason}` : ""}`, voided_at: new Date().toISOString() })
+      .in("round_id", roundIds);
   }
   return { ok: true };
 }

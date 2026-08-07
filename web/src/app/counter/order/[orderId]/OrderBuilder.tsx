@@ -18,6 +18,7 @@ import { sumLines, billTotals } from "@/lib/order-math";
 import { cn } from "@/components/ui";
 import { ItemPhoto } from "@/components/ItemPhoto";
 import { ItemModal, type AddSelection } from "./ItemModal";
+import { CustomerCorner } from "./CustomerCorner";
 import { addLineItem, deleteLineItem, sendToKitchen } from "../../actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 
@@ -100,7 +101,7 @@ function RoundList({
 
 export function OrderBuilder({ orderId }: { orderId: string }) {
   const router = useRouter();
-  const { prompt } = useConfirm();
+  const { prompt, notify } = useConfirm();
   const supaRef = useRef(createClient());
   const [menu, setMenu] = useState<MenuCategoryWithProducts[]>([]);
   const [modifiers, setModifiers] = useState<string[]>([]);
@@ -214,8 +215,14 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
   const table = order?.table;
   const otype = order?.order.order_type ?? "dine_in";
+  const typeNo = order?.order.type_number ?? null;
+  const token = order?.order.token_number ?? null;
   const headline =
-    otype === "takeaway" ? "Takeaway" : otype === "delivery" ? "Delivery" : `Table ${table?.number ?? "—"}`;
+    otype === "takeaway"
+      ? `Takeaway${typeNo != null ? ` #${typeNo}` : ""}`
+      : otype === "delivery"
+        ? `Delivery${typeNo != null ? ` #${typeNo}` : ""}`
+        : `Table ${table?.number ?? "—"}`;
   const custName = order?.order.customer_name ?? null;
 
   return (
@@ -232,6 +239,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
             <div className="text-base font-bold text-[#1A1A1A] leading-tight">{headline}</div>
             <div className="text-xs text-[#605e5b]">
               Round {roundNumber}
+              {token != null ? ` · Token #${token}` : ""}
               {otype === "dine_in" && table?.opened_at
                 ? ` · Occupied ${formatDuration(table.opened_at, now)}`
                 : custName
@@ -251,17 +259,22 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           </button>
           <button
             onClick={async () => {
-              const reason = await prompt({
+              const pin = await prompt({
                 title: "Cancel this order?",
-                message: "Nothing is charged and any table is freed.",
-                inputLabel: "Reason (optional)",
-                placeholder: "e.g. customer left",
+                message: "Nothing is charged and any table is freed. Enter the owner PIN to confirm.",
+                inputLabel: "Owner PIN",
+                placeholder: "PIN",
+                required: true,
                 confirmLabel: "Cancel order",
                 cancelLabel: "Keep order",
                 danger: true,
               });
-              if (reason === null) return;
-              await cancelOrder(orderId, reason || undefined);
+              if (!pin) return;
+              const res = await cancelOrder(orderId, { pin });
+              if (!res.ok) {
+                await notify({ title: "Not cancelled", message: res.error, danger: true });
+                return;
+              }
               router.push("/counter");
             }}
             className="flex h-10 items-center gap-1.5 rounded-xl border border-[#e4beba] px-3 text-xs font-semibold text-[#605e5b] transition-colors hover:border-[#af101a]/40 hover:text-[#af101a]"
@@ -402,6 +415,18 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
             </div>
           </div>
         </div>
+      )}
+
+      {otype !== "dine_in" && order && (
+        <CustomerCorner
+          orderId={orderId}
+          type={otype as "takeaway" | "delivery"}
+          initial={{
+            name: order.order.customer_name,
+            phone: order.order.customer_phone,
+            address: order.order.customer_address,
+          }}
+        />
       )}
 
       {modalProduct && (() => {

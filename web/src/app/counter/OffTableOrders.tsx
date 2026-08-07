@@ -4,22 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchOffTableOrders, type OffTableOrder } from "@/lib/queries";
-import { startTakeaway, startDelivery, type CustomerInfo } from "./actions";
+import { startTakeaway, startDelivery } from "./actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 import { formatRs } from "@/lib/money";
 import { cn } from "@/components/ui";
-import { BottomSheet } from "@/components/BottomSheet";
 import { useConfirm } from "@/components/Confirm";
-
-type NewType = "takeaway" | "delivery" | null;
 
 /** Takeaway & Delivery: start off-table orders and continue the active ones. */
 export function OffTableOrders() {
   const router = useRouter();
-  const { prompt } = useConfirm();
+  const { prompt, notify } = useConfirm();
   const supaRef = useRef(createClient());
   const [orders, setOrders] = useState<OffTableOrder[]>([]);
-  const [modal, setModal] = useState<NewType>(null);
+  const [starting, setStarting] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
@@ -29,18 +26,35 @@ export function OffTableOrders() {
     }
   }, []);
 
+  // Start immediately with no upfront form — customer details are filled later
+  // from the small optional card inside the order builder.
+  async function startNew(type: "takeaway" | "delivery") {
+    setStarting(true);
+    try {
+      const res = type === "delivery" ? await startDelivery({}) : await startTakeaway({});
+      router.push(`/counter/order/${res.orderId}`);
+    } finally {
+      setStarting(false);
+    }
+  }
+
   async function handleCancel(o: OffTableOrder) {
-    const reason = await prompt({
+    const pin = await prompt({
       title: `Cancel this ${o.order_type} order?`,
-      message: "Nothing is charged.",
-      inputLabel: "Reason (optional)",
-      placeholder: "e.g. customer cancelled",
+      message: "Nothing is charged. Enter the owner PIN to confirm.",
+      inputLabel: "Owner PIN",
+      placeholder: "PIN",
+      required: true,
       confirmLabel: "Cancel order",
       cancelLabel: "Keep order",
       danger: true,
     });
-    if (reason === null) return;
-    await cancelOrder(o.id, reason || undefined);
+    if (!pin) return;
+    const res = await cancelOrder(o.id, { pin });
+    if (!res.ok) {
+      await notify({ title: "Not cancelled", message: res.error, danger: true });
+      return;
+    }
     await refetch();
   }
 
@@ -65,15 +79,17 @@ export function OffTableOrders() {
         </h2>
         <div className="flex gap-2">
           <button
-            onClick={() => setModal("takeaway")}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#af101a]/40 bg-white px-3.5 py-2 text-xs font-bold text-[#af101a] transition-all hover:bg-[#ffe9e7] active:scale-[0.98]"
+            onClick={() => startNew("takeaway")}
+            disabled={starting}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#af101a]/40 bg-white px-3.5 py-2 text-xs font-bold text-[#af101a] transition-all hover:bg-[#ffe9e7] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>takeout_dining</span>
             New Takeaway
           </button>
           <button
-            onClick={() => setModal("delivery")}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#af101a] px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-[#8b0d14] active:scale-[0.98]"
+            onClick={() => startNew("delivery")}
+            disabled={starting}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#af101a] px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-[#8b0d14] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delivery_dining</span>
             New Delivery
@@ -105,18 +121,28 @@ export function OffTableOrders() {
                     <span className="material-symbols-outlined" style={{ fontSize: "13px" }}>
                       {o.order_type === "delivery" ? "delivery_dining" : "takeout_dining"}
                     </span>
-                    {o.order_type}
+                    {o.order_type}{o.type_number != null ? ` #${o.type_number}` : ""}
                   </span>
                   {o.token_number != null && (
-                    <span className="text-sm font-extrabold text-[#af101a]">#{o.token_number}</span>
+                    <span className="rounded-md bg-[#fff0ef] px-1.5 py-0.5 text-[11px] font-extrabold text-[#af101a]">
+                      Token #{o.token_number}
+                    </span>
                   )}
                 </div>
-                <div className="mt-2 text-sm font-bold text-[#1A1A1A]">
-                  {o.customer_name || "Walk-in customer"}
+
+                {/* what they ordered */}
+                <div className="mt-2 line-clamp-2 text-xs leading-snug text-[#1A1A1A]">
+                  {o.items.length
+                    ? o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")
+                    : <span className="text-[#605e5b] italic">No items yet</span>}
                 </div>
-                <div className="text-xs text-[#605e5b]">
-                  {o.customer_phone || `Order ${o.order_number}`}
-                </div>
+
+                {(o.customer_name || o.customer_phone) && (
+                  <div className="mt-1.5 text-xs font-semibold text-[#605e5b]">
+                    {[o.customer_name, o.customer_phone].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+
                 <div className="mt-3 flex items-center justify-between border-t border-[#f0e4e2] pt-2">
                   <span className="text-xs text-[#605e5b]">{o.rounds} round{o.rounds === 1 ? "" : "s"}</span>
                   <span className="text-sm font-bold text-[#af101a]" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>
@@ -146,104 +172,6 @@ export function OffTableOrders() {
           ))}
         </div>
       )}
-
-      {modal && (
-        <CustomerModal
-          type={modal}
-          onClose={() => setModal(null)}
-          onStart={async (info) => {
-            const res = modal === "delivery" ? await startDelivery(info) : await startTakeaway(info);
-            router.push(`/counter/order/${res.orderId}`);
-          }}
-        />
-      )}
     </section>
-  );
-}
-
-function CustomerModal({
-  type,
-  onClose,
-  onStart,
-}: {
-  type: "takeaway" | "delivery";
-  onClose: () => void;
-  onStart: (info: CustomerInfo) => Promise<void>;
-}) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [busy, setBusy] = useState(false);
-  const isDelivery = type === "delivery";
-  // Takeaway: only the name is required. Delivery: name + address required. Phone always optional.
-  const canStart = name.trim() !== "" && (!isDelivery || address.trim() !== "");
-  const req = <span className="text-[#af101a]"> *</span>;
-  const opt = <span className="font-normal text-[#605e5b]"> (optional)</span>;
-
-  return (
-    <BottomSheet onClose={onClose}>
-      <div>
-        <div className="mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#af101a]" style={{ fontSize: "24px" }}>
-            {isDelivery ? "delivery_dining" : "takeout_dining"}
-          </span>
-          <h3 className="text-lg font-bold text-[#1A1A1A]">New {isDelivery ? "Delivery" : "Takeaway"}</h3>
-        </div>
-
-        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Customer name{req}</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Required"
-          autoFocus
-          className="mb-3 w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none transition-colors focus:border-[#af101a]"
-        />
-
-        <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Phone{opt}</label>
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          inputMode="tel"
-          placeholder="03xx-xxxxxxx"
-          className="mb-3 w-full rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none transition-colors focus:border-[#af101a]"
-        />
-
-        {isDelivery && (
-          <>
-            <label className="mb-1.5 block text-sm font-semibold text-[#1A1A1A]">Delivery address{req}</label>
-            <textarea
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              rows={2}
-              placeholder="House, street, area"
-              className="mb-3 w-full resize-none rounded-xl border border-[#e4beba] bg-[#fff0ef] px-4 py-2.5 text-sm text-[#1A1A1A] outline-none transition-colors focus:border-[#af101a]"
-            />
-          </>
-        )}
-
-        <div className="mt-1 flex gap-3">
-          <button
-            onClick={onClose}
-            className="h-12 flex-1 rounded-xl border border-[#e4beba] text-sm font-semibold text-[#605e5b] transition-colors hover:bg-[#fff0ef]"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={busy || !canStart}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                await onStart({ name: name.trim(), phone: phone.trim(), address: isDelivery ? address.trim() : undefined });
-              } finally {
-                setBusy(false);
-              }
-            }}
-            className="h-12 flex-1 rounded-xl bg-[#af101a] text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8b0d14] disabled:opacity-50"
-          >
-            {busy ? "Starting…" : "Start order"}
-          </button>
-        </div>
-      </div>
-    </BottomSheet>
   );
 }

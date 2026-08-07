@@ -83,6 +83,7 @@ export interface Order {
   status: OrderStatus;
   service_charge_pct: number;
   token_number: number | null;
+  type_number: number | null;
   shift_id: string | null;
   opened_at: string;
   closed_at: string | null;

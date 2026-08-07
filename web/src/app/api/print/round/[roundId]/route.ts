@@ -30,8 +30,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ roundId
   if (!full) return new Response("Order not found", { status: 404 });
 
   const ot = full.order.order_type;
-  const tableLabel = ot === "takeaway" ? "Takeaway" : ot === "delivery" ? "Delivery" : `Table #${full.table?.number ?? "?"}`;
-  const kitchenLabel = ot === "takeaway" ? "TAKEAWAY" : ot === "delivery" ? "DELIVERY" : `T-${String(full.table?.number ?? 0).padStart(2, "0")}`;
+  const tn = full.order.type_number;
+  const tableLabel =
+    ot === "takeaway" ? `Takeaway${tn ? ` #${tn}` : ""}`
+    : ot === "delivery" ? `Delivery${tn ? ` #${tn}` : ""}`
+    : `Table #${full.table?.number ?? "?"}`;
+  const kitchenLabel =
+    ot === "takeaway" ? `TAKEAWAY${tn ? ` #${tn}` : ""}`
+    : ot === "delivery" ? `DELIVERY${tn ? ` #${tn}` : ""}`
+    : `T-${String(full.table?.number ?? 0).padStart(2, "0")}`;
 
   const roundItems = ((round.order_line_items ?? []) as Array<{
     quantity: number;

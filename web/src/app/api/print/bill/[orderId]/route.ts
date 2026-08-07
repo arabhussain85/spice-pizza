@@ -45,7 +45,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
   const cashPay = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
 
   const ot = full.order.order_type;
-  const tableLabel = ot === "takeaway" ? "Takeaway" : ot === "delivery" ? "Delivery" : `Table #${full.table?.number ?? "?"}`;
+  const tn = full.order.type_number;
+  const tableLabel =
+    ot === "takeaway" ? `Takeaway${tn ? ` #${tn}` : ""}`
+    : ot === "delivery" ? `Delivery${tn ? ` #${tn}` : ""}`
+    : `Table #${full.table?.number ?? "?"}`;
 
   const item = (li: OrderLineItem) => ({
     qty: li.quantity,

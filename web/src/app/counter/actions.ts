@@ -100,21 +100,23 @@ export interface CustomerInfo {
   address?: string;
 }
 
-/** Start a takeaway or delivery order (no table). Service charge is waived for off-table orders. */
+/** Start a takeaway or delivery order (no table, all customer fields optional). */
 async function startOffTable(
   type: "takeaway" | "delivery",
   customer: CustomerInfo,
 ): Promise<{ orderId: string }> {
-  const name = customer.name?.trim();
-  const phone = customer.phone?.trim();
-  const address = customer.address?.trim();
-  if (!name) throw new Error("Customer name is required.");
-  if (type === "delivery" && !address) throw new Error("Delivery address is required.");
-
   const supa = createAdminClient();
   const staff = await sessionStaff();
   const shiftId = await ensureOpenShift(supa, staff.name);
   const token = await nextToken(supa, shiftId);
+  // per-type sequence within the shift (Takeaway #1, Delivery #1, …)
+  const { count } = await supa
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("shift_id", shiftId)
+    .eq("order_type", type);
+  const typeNumber = (count ?? 0) + 1;
+
   const { data: order, error } = await supa
     .from("orders")
     .insert({
@@ -124,6 +126,7 @@ async function startOffTable(
       service_charge_pct: 0,
       shift_id: shiftId,
       token_number: token,
+      type_number: typeNumber,
       customer_name: customer.name?.trim() || null,
       customer_phone: customer.phone?.trim() || null,
       customer_address: customer.address?.trim() || null,
@@ -133,6 +136,24 @@ async function startOffTable(
   if (error) throw new Error(error.message);
   await supa.from("order_rounds").insert({ order_id: order.id, round_number: 1 });
   return { orderId: order.id };
+}
+
+/** Update the (optional) customer details on a takeaway/delivery order. */
+export async function updateOrderCustomer(
+  orderId: string,
+  customer: CustomerInfo,
+): Promise<{ ok: true }> {
+  const supa = createAdminClient();
+  const { error } = await supa
+    .from("orders")
+    .update({
+      customer_name: customer.name?.trim() || null,
+      customer_phone: customer.phone?.trim() || null,
+      customer_address: customer.address?.trim() || null,
+    })
+    .eq("id", orderId);
+  if (error) throw new Error(error.message);
+  return { ok: true };
 }
 
 export async function startTakeaway(customer: CustomerInfo): Promise<{ orderId: string }> {
