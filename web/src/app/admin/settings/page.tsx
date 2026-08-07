@@ -12,6 +12,7 @@ import {
   getDiscountPin,
   setDiscountPin,
 } from "../settings-actions";
+import { getDevCode, setDevCode } from "../dev-actions";
 
 export default function SettingsPage() {
   const supaRef = useRef(createClient());
@@ -55,7 +56,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl border-2 border-brand bg-brand-tint/30 p-4 shadow-2xs">
           <div className="text-xl mb-1">⚙️</div>
           <h3 className="font-bold text-sm text-brand">General Settings</h3>
@@ -75,6 +76,14 @@ export default function SettingsPage() {
             <div className="text-xl mb-1 group-hover:scale-110 transition-transform">🖨️</div>
             <h3 className="font-bold text-sm text-ink group-hover:text-brand">Printer Section</h3>
             <p className="text-xs text-muted mt-1">Configure thermal printer bridge & test prints</p>
+          </div>
+        </Link>
+
+        <Link href="/admin/dev" className="group">
+          <div className="rounded-2xl border border-hairline bg-surface p-4 shadow-2xs transition-all hover:border-brand/40 hover:bg-cream/40 hover:shadow-xs">
+            <div className="text-xl mb-1 group-hover:scale-110 transition-transform">🛠️</div>
+            <h3 className="font-bold text-sm text-ink group-hover:text-brand">Developer Controls</h3>
+            <p className="text-xs text-muted mt-1">Code-gated: reset data, close shifts</p>
           </div>
         </Link>
       </div>
@@ -177,6 +186,7 @@ function SecurityCard() {
   const supaRef = useRef(createClient());
   const [counterPin, setCounterPinState] = useState("");
   const [discountPin, setDiscountPinState] = useState("");
+  const [devCode, setDevCodeState] = useState("");
   const [newPass, setNewPass] = useState("");
   const [busy, setBusy] = useState(false);
   const [pinMsg, setPinMsg] = useState<string | null>(null);
@@ -185,6 +195,7 @@ function SecurityCard() {
   useEffect(() => {
     getCounterPin().then(setCounterPinState);
     getDiscountPin().then(setDiscountPinState);
+    getDevCode().then(setDevCodeState);
   }, []);
 
   async function savePins() {
@@ -193,7 +204,8 @@ function SecurityCard() {
     try {
       await setCounterPin(counterPin.trim());
       await setDiscountPin(discountPin.trim());
-      setPinMsg("PINs updated.");
+      if (devCode.trim()) await setDevCode(devCode.trim());
+      setPinMsg("Saved.");
       setTimeout(() => setPinMsg(null), 3000);
     } catch (e) {
       setPinMsg((e as Error).message);
@@ -253,6 +265,19 @@ function SecurityCard() {
             className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm font-bold tracking-[0.3em] outline-none focus:border-brand"
           />
           <p className="mt-1 text-xs text-muted">Required to authorize discounts.</p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Developer Code
+          </label>
+          <input
+            value={devCode}
+            onChange={(e) => setDevCodeState(e.target.value)}
+            placeholder="dev control code"
+            className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm font-bold outline-none focus:border-brand"
+          />
+          <p className="mt-1 text-xs text-muted">Unlocks Developer Controls (data reset).</p>
         </div>
       </div>
 
