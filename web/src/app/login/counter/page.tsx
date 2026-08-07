@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const COUNTER_PIN = "1234";
+import { validateCounterPin } from "@/app/admin/settings-actions";
 
 const NUMPAD = [
   ["1", "2", "3"],
@@ -44,8 +43,9 @@ export default function CounterPinLoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function validatePin(value: string) {
-    if (value === COUNTER_PIN) {
+  async function validatePin(value: string) {
+    const ok = await validateCounterPin(value);
+    if (ok) {
       // Set cookie valid for 8 hours
       const expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString();
       document.cookie = `counter_pin=valid; path=/; expires=${expires}; SameSite=Strict`;

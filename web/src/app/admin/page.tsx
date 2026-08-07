@@ -12,7 +12,6 @@ import { Icon } from "@/components/Icon";
 export default function AdminTodayPage() {
   const supaRef = useRef(createClient());
   const [data, setData] = useState<TodayData | null>(null);
-  const [ownerName, setOwnerName] = useState("Owner");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +29,6 @@ export default function AdminTodayPage() {
   useEffect(() => {
     const supa = supaRef.current;
     refetch();
-    supa
-      .from("staff")
-      .select("name")
-      .eq("role", "owner")
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => data?.name && setOwnerName(data.name));
 
     const channel = supa
       .channel("admin-today")
@@ -66,11 +58,11 @@ export default function AdminTodayPage() {
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-muted">{formatLongDate(now)}</span>
           <h1 className="text-2xl font-black tracking-tight text-ink mt-0.5">
-            {greeting(now)}, {ownerName} 👋
+            {greeting(now)} 👋
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Avatar name={ownerName} size={42} />
+          <Avatar name="Spice Pizza" size={42} />
         </div>
       </div>
 

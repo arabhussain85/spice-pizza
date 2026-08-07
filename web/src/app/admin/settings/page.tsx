@@ -6,6 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import type { Settings } from "@/lib/types";
 import { Button, Card, Pill, cn, InputField } from "@/components/ui";
 import { updateSettings } from "../actions";
+import {
+  getCounterPin,
+  setCounterPin,
+  getDiscountPin,
+  setDiscountPin,
+} from "../settings-actions";
 
 export default function SettingsPage() {
   const supaRef = useRef(createClient());
@@ -161,6 +167,120 @@ export default function SettingsPage() {
 
         {saved && <p className="text-center text-xs font-bold text-free-dark animate-in fade-in">✓ Changes saved successfully.</p>}
       </Card>
+
+      <SecurityCard />
     </div>
+  );
+}
+
+function SecurityCard() {
+  const supaRef = useRef(createClient());
+  const [counterPin, setCounterPinState] = useState("");
+  const [discountPin, setDiscountPinState] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [pinMsg, setPinMsg] = useState<string | null>(null);
+  const [passMsg, setPassMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCounterPin().then(setCounterPinState);
+    getDiscountPin().then(setDiscountPinState);
+  }, []);
+
+  async function savePins() {
+    setBusy(true);
+    setPinMsg(null);
+    try {
+      await setCounterPin(counterPin.trim());
+      await setDiscountPin(discountPin.trim());
+      setPinMsg("PINs updated.");
+      setTimeout(() => setPinMsg(null), 3000);
+    } catch (e) {
+      setPinMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function changePassword() {
+    if (newPass.length < 6) {
+      setPassMsg("Password must be at least 6 characters.");
+      return;
+    }
+    setBusy(true);
+    setPassMsg(null);
+    const { error } = await supaRef.current.auth.updateUser({ password: newPass });
+    setBusy(false);
+    if (error) {
+      setPassMsg(error.message);
+    } else {
+      setNewPass("");
+      setPassMsg("Password changed.");
+      setTimeout(() => setPassMsg(null), 3000);
+    }
+  }
+
+  return (
+    <Card className="p-6 space-y-5">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Access &amp; Security</h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Counter Terminal PIN
+          </label>
+          <input
+            value={counterPin}
+            onChange={(e) => setCounterPinState(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="4 digits"
+            className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm font-bold tracking-[0.3em] outline-none focus:border-brand"
+          />
+          <p className="mt-1 text-xs text-muted">Staff type this to unlock the counter.</p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+            Owner Discount PIN
+          </label>
+          <input
+            value={discountPin}
+            onChange={(e) => setDiscountPinState(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="up to 6 digits"
+            className="w-full rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm font-bold tracking-[0.3em] outline-none focus:border-brand"
+          />
+          <p className="mt-1 text-xs text-muted">Required to authorize discounts.</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button loading={busy} disabled={!counterPin || !discountPin} onClick={savePins}>
+          Save PINs
+        </Button>
+        {pinMsg && <span className="text-xs font-bold text-free-dark">{pinMsg}</span>}
+      </div>
+
+      <div className="border-t border-hairline pt-5">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+          Change Owner Password
+        </label>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="password"
+            value={newPass}
+            onChange={(e) => setNewPass(e.target.value)}
+            placeholder="New password (min 6 chars)"
+            className="flex-1 rounded-xl border border-hairline bg-cream/30 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
+          />
+          <Button variant="outline" loading={busy} disabled={!newPass} onClick={changePassword}>
+            Update Password
+          </Button>
+        </div>
+        {passMsg && <p className="mt-2 text-xs font-bold text-free-dark">{passMsg}</p>}
+      </div>
+    </Card>
   );
 }

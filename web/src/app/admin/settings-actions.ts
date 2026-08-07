@@ -26,3 +26,24 @@ export async function setDiscountPin(pin: string) {
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+/** The 4-digit PIN used to unlock the counter terminal (stored in settings). */
+export async function getCounterPin(): Promise<string> {
+  const supa = createAdminClient();
+  const { data } = await supa.from("settings").select("counter_pin").eq("id", 1).maybeSingle();
+  return (data?.counter_pin as string) ?? "1234";
+}
+
+export async function setCounterPin(pin: string) {
+  const supa = createAdminClient();
+  const { error } = await supa.from("settings").update({ counter_pin: pin }).eq("id", 1);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+/** Server-side check for the counter terminal PIN (keeps the PIN off the client). */
+export async function validateCounterPin(pin: string): Promise<boolean> {
+  const supa = createAdminClient();
+  const { data } = await supa.from("settings").select("counter_pin").eq("id", 1).maybeSingle();
+  return pin === ((data?.counter_pin as string) ?? "1234");
+}
