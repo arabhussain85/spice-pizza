@@ -13,7 +13,7 @@ import { cn } from "@/components/ui";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useConfirm } from "@/components/Confirm";
 import { LoadingScreen } from "@/components/Loader";
-import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
+import { addLineItem, closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
 export function BillView({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -334,6 +334,9 @@ export function BillView({ orderId }: { orderId: string }) {
         {error && <p className="mt-3 text-sm text-[#af101a] text-center">{error}</p>}
       </div>
 
+      {/* Weight ⇄ price calculator (fish etc.) */}
+      <WeightCalculator orderId={orderId} onAdded={refetch} />
+
       {/* ── Modals ──────────────────────────────────────────── */}
       {showDiscount && (
         <DiscountModal
@@ -374,6 +377,113 @@ export function BillView({ orderId }: { orderId: string }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/** Weight ⇄ price calculator for sold-by-weight items (fish etc.). Adds a line to the bill. */
+function WeightCalculator({ orderId, onAdded }: { orderId: string; onAdded: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("Fish");
+  const [rate, setRate] = useState("");
+  const [grams, setGrams] = useState("");
+  const [price, setPrice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const r = Number(rate) || 0;
+  function onRate(v: string) {
+    setRate(v);
+    const nr = Number(v) || 0;
+    const g = Number(grams) || 0;
+    if (g > 0) setPrice(nr > 0 ? String(Math.round((g / 1000) * nr)) : "");
+  }
+  function onGrams(v: string) {
+    setGrams(v);
+    const g = Number(v) || 0;
+    setPrice(r > 0 && g > 0 ? String(Math.round((g / 1000) * r)) : "");
+  }
+  function onPrice(v: string) {
+    setPrice(v);
+    const p = Number(v) || 0;
+    setGrams(r > 0 && p > 0 ? String(Math.round((p / r) * 1000)) : "");
+  }
+
+  async function add() {
+    const p = Number(price) || 0;
+    const g = Number(grams) || 0;
+    if (p <= 0) return;
+    setBusy(true);
+    try {
+      await addLineItem(orderId, {
+        menuItemId: null,
+        name: name.trim() || "Weighted item",
+        size: g > 0 ? `${g} g` : null,
+        unitPrice: p,
+        quantity: 1,
+        note: r > 0 ? `@ Rs ${r}/kg` : null,
+        modifiers: [],
+      });
+      setGrams("");
+      setPrice("");
+      await onAdded();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#e4beba] bg-white px-4 py-2.5 text-sm font-semibold text-[#af101a] shadow-sm hover:bg-[#fff0ef]"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>calculate</span>
+        Weight ⇄ price calculator
+      </button>
+    );
+  }
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-[#e4beba] bg-[#fff0ef] px-3 py-2 text-sm font-bold text-[#1A1A1A] outline-none focus:border-[#af101a]";
+
+  return (
+    <div className="mt-4 rounded-2xl border border-[#e4beba] bg-white p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-[#1A1A1A]">
+          <span className="material-symbols-outlined text-[#af101a]" style={{ fontSize: "20px" }}>calculate</span>
+          Weight ⇄ Price
+        </h3>
+        <button onClick={() => setOpen(false)} className="text-[#605e5b] hover:text-[#af101a]" aria-label="close">
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-xs font-semibold text-[#605e5b]">
+          Item
+          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+        </label>
+        <label className="text-xs font-semibold text-[#605e5b]">
+          Rate (Rs / kg)
+          <input value={rate} onChange={(e) => onRate(e.target.value)} inputMode="numeric" placeholder="e.g. 2800" className={inputCls} />
+        </label>
+        <label className="text-xs font-semibold text-[#605e5b]">
+          Weight (grams)
+          <input value={grams} onChange={(e) => onGrams(e.target.value)} inputMode="numeric" placeholder="grams" className={inputCls} />
+        </label>
+        <label className="text-xs font-semibold text-[#605e5b]">
+          Price (Rs)
+          <input value={price} onChange={(e) => onPrice(e.target.value)} inputMode="numeric" placeholder="Rs" className={cn(inputCls, "text-[#af101a]")} />
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-[#605e5b]">Set the rate, then type either the weight or the price — the other fills in automatically.</p>
+      <button
+        onClick={add}
+        disabled={busy || !(Number(price) > 0)}
+        className="mt-3 w-full rounded-xl bg-[#af101a] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#8b0d14] disabled:opacity-50"
+      >
+        {busy ? "Adding…" : `Add to bill${Number(price) > 0 ? ` · ${formatRs(Number(price))}` : ""}`}
+      </button>
     </div>
   );
 }
