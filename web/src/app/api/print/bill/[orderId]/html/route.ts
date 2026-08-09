@@ -12,11 +12,11 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/print/bill/[orderId]/html
  *
- * Returns a self-contained HTML receipt page that:
- *  - Uses @page { size: 80mm auto; margin: 0 } so the browser print dialog
- *    sets the correct paper width (no infinite roll)
- *  - Automatically calls window.print() on load
- *  - Auto-closes the tab after the dialog is dismissed
+ * Returns a self-contained HTML receipt page optimised for 80mm thermal printers.
+ *  - @page { size: 80mm auto } → correct paper width, no infinite roll
+ *  - Courier New monospace, bold column headers, dashed rules
+ *  - All columns fit 72mm printable area
+ *  - Auto-calls window.print() on load and auto-closes after
  */
 export async function GET(
   _req: Request,
@@ -41,18 +41,16 @@ export async function GET(
   if (!full) return new Response("Order not found", { status: 404 });
 
   const allLines = full.rounds.flatMap((r) => r.order_line_items);
-  const live = allLines.filter((li) => !li.is_voided);
-  const totals = billTotals(
+  const live     = allLines.filter((li) => !li.is_voided);
+  const totals   = billTotals(
     allLines,
     full.order.service_charge_pct,
     full.discount ? { type: full.discount.type, value: full.discount.value } : null
   );
-  const promo = promoTotals(live, promos, menuMeta);
-
+  const promo    = promoTotals(live, promos, menuMeta);
   const serviceAmt = cfg.showService ? totals.service : 0;
-  const netTotal = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
-
-  const cashPay = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
+  const netTotal   = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
+  const cashPay    = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
 
   const ot = full.order.order_type;
   const tn = full.order.type_number;
@@ -61,204 +59,342 @@ export async function GET(
     : ot === "delivery" ? `Delivery${tn ? ` #${tn}` : ""}`
     : `Table #${full.table?.number ?? "?"}`;
 
-  const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const date = new Date().toLocaleDateString("en-GB",  { day: "2-digit", month: "short", year: "numeric" });
+  const time = new Date().toLocaleTimeString("en-US",  { hour: "2-digit", minute: "2-digit", hour12: true });
 
+  // Safe HTML escape
+  const e = (s?: string | null) =>
+    (s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  // ── Dashed separator (full printable width) ──────────────────────
+  // 32 chars fits comfortably in 72mm at 9pt Courier
+  const DASH = "--------------------------------";
+
+  // ── Item rows ────────────────────────────────────────────────────
+  // Layout: [##] [ITEM NAME (wraps)        ] [QTY] [   PRICE]
+  // Column widths (chars @9pt Courier ~2.25mm each, total ≈32 chars):
+  //   sr:2  gap:1  name:varies  qty:3  gap:1  price:8 (right-align)
+  // We use a table with fixed col widths in mm for reliability.
   const itemRows = live.map((li: OrderLineItem, i: number) => {
-    const name = `${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`;
-    const sub = cfg.showItemNotes
-      ? [li.note, ...li.modifiers].filter(Boolean).join(", ")
-      : null;
+    const name = e(`${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`);
+    const mods = cfg.showItemNotes
+      ? [li.note, ...li.modifiers].filter(Boolean).map(e).join(", ")
+      : "";
+    const price = e(formatRs(li.unit_price * li.quantity));
     return `
-      <tr>
-        <td class="sr">${i + 1}</td>
-        <td class="name">${esc(name)}${sub ? `<br><span class="note">${esc(sub)}</span>` : ""}</td>
-        <td class="qty">${li.quantity}</td>
-        <td class="amt">${esc(formatRs(li.unit_price * li.quantity))}</td>
-      </tr>`;
+<tr>
+  <td class="c-sr">${i + 1}.</td>
+  <td class="c-name">${name}${mods ? `<div class="mod">&rsaquo; ${mods}</div>` : ""}</td>
+  <td class="c-qty">${li.quantity}</td>
+  <td class="c-price">${price}</td>
+</tr>`;
   }).join("");
 
-  const extraLines = [
-    ...(promo.discount > 0
-      ? [`<tr><td colspan="3" class="lbl">Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}</td><td class="amt red">- ${esc(formatRs(promo.discount))}</td></tr>`]
-      : []),
-    ...(totals.discount > 0
-      ? [`<tr><td colspan="3" class="lbl">Discount${full.discount?.reason ? ` · ${full.discount.reason}` : ""}</td><td class="amt red">- ${esc(formatRs(totals.discount))}</td></tr>`]
-      : []),
-  ].join("");
+  // ── Totals rows ──────────────────────────────────────────────────
+  const totalRows = [
+    `<tr><td class="t-lbl">Subtotal</td><td class="t-val">${e(formatRs(totals.subtotal))}</td></tr>`,
+    cfg.showService && totals.service > 0
+      ? `<tr><td class="t-lbl">Service (${full.order.service_charge_pct}%)</td><td class="t-val">${e(formatRs(totals.service))}</td></tr>`
+      : "",
+    promo.discount > 0
+      ? `<tr><td class="t-lbl">Promo${promo.names.length ? " - " + promo.names.join(", ") : ""}</td><td class="t-val">- ${e(formatRs(promo.discount))}</td></tr>`
+      : "",
+    totals.discount > 0
+      ? `<tr><td class="t-lbl">Discount${full.discount?.reason ? " - " + full.discount.reason : ""}</td><td class="t-val">- ${e(formatRs(totals.discount))}</td></tr>`
+      : "",
+  ].filter(Boolean).join("\n");
 
-  const date = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  // ── Cash / change rows ───────────────────────────────────────────
+  const payRows = cashPay ? `
+<tr class="sep-row"><td colspan="2"><div class="dash">${DASH}</div></td></tr>
+<tr>
+  <td class="t-lbl">${cashPay.method.toLowerCase() === "cash" ? "Cash Tendered" : `Paid (${e(cashPay.method)})`}</td>
+  <td class="t-val">${e(formatRs(Number(cashPay.tendered)))}</td>
+</tr>
+<tr>
+  <td class="t-lbl t-bold">Change Due</td>
+  <td class="t-val t-bold">${e(formatRs(Math.max(0, Number(cashPay.tendered) - netTotal)))}</td>
+</tr>` : "";
+
+  // ── WiFi ─────────────────────────────────────────────────────────
+  const wifiBlock = cfg.showWifi && cfg.wifiSsid
+    ? `<div class="dash">${DASH}</div>
+<p class="center small">Wi-Fi: <b>${e(cfg.wifiSsid)}</b> &nbsp;/&nbsp; ${e(cfg.wifiPass)}</p>`
+    : "";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Receipt #${esc(full.order.order_number)}</title>
+<title>Receipt #${e(full.order.order_number)}</title>
 <style>
-  /* ── Paper size: 80mm wide, auto height ── */
-  @page {
-    size: 80mm auto;
-    margin: 4mm 0;
-  }
+/* ═══════════════════════════════════════════════════════════════
+   80mm THERMAL RECEIPT  —  printable width 72mm
+   @page forces the browser print dialog to 80mm paper width.
+   Courier New keeps character widths consistent across OS.
+═══════════════════════════════════════════════════════════════ */
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+@page {
+  size: 80mm auto;   /* width locked to 80mm, height = content */
+  margin: 4mm 4mm;   /* 4mm top/bottom, 4mm left/right = 72mm body */
+}
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9pt;
+  line-height: 1.35;
+  width: 72mm;
+  color: #000;
+  background: #fff;
+}
+
+/* Screen preview only */
+@media screen {
   body {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10pt;
-    width: 72mm;          /* printable area inside 80mm */
-    margin: 0 auto;
-    color: #000;
-    background: #fff;
+    width: 72mm;
+    padding: 8px;
+    margin: 16px auto;
+    border: 1px dashed #bbb;
+    background: #fafafa;
   }
+}
 
-  /* Screen preview styling */
-  @media screen {
-    body {
-      padding: 10px;
-      border: 1px dashed #ccc;
-      margin: 20px auto;
-    }
-  }
+/* ── Utilities ── */
+.center  { text-align: center; }
+.right   { text-align: right; }
+.bold    { font-weight: bold; }
+.small   { font-size: 7.5pt; }
+.muted   { color: #444; }
 
-  .center { text-align: center; }
-  .right  { text-align: right; }
-  .bold   { font-weight: bold; }
-  .red    { color: #af101a; }
+/* ── Dashed rule ── */
+.dash {
+  font-size: 8.5pt;
+  letter-spacing: 0;
+  color: #222;
+  margin: 3px 0;
+  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+}
 
-  h1 { font-size: 14pt; letter-spacing: 2px; margin-bottom: 2px; }
-  h2 { font-size: 8pt; font-weight: normal; margin-bottom: 1px; }
+/* ── Restaurant header ── */
+.brand {
+  font-size: 15pt;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 1px;
+}
+.header-sub {
+  font-size: 8pt;
+  text-align: center;
+  margin-bottom: 1px;
+}
 
-  .divider {
-    border: none;
-    border-top: 1px dashed #555;
-    margin: 4px 0;
-  }
-  .divider-solid {
-    border: none;
-    border-top: 1.5px solid #000;
-    margin: 4px 0;
-  }
+/* ── Order meta (two-column) ── */
+.meta-table {
+  width: 100%;
+  font-size: 8pt;
+  border-collapse: collapse;
+  margin: 3px 0;
+}
+.meta-table td { vertical-align: top; padding: 0.5px 0; }
+.meta-table td.ml { width: 52%; }
+.meta-table td.mr { width: 48%; text-align: right; }
 
-  /* Meta row */
-  .meta { display: flex; justify-content: space-between; font-size: 8.5pt; margin: 2px 0; }
-  .meta span { display: block; }
+/* ── TOKEN badge ── */
+.token {
+  font-size: 11pt;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+  margin: 2px 0;
+}
 
-  /* Items table */
-  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-  th { font-size: 8pt; text-align: left; padding-bottom: 2px; }
-  td { padding: 1.5px 0; vertical-align: top; }
-  td.sr  { width: 12px; color: #555; }
-  td.name { padding-left: 3px; }
-  td.qty { width: 20px; text-align: center; }
-  td.amt { width: 50px; text-align: right; white-space: nowrap; }
-  td.lbl { padding-left: 3px; color: #444; }
-  span.note { font-size: 8pt; color: #555; }
+/* ── Items table ── */
+.items {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2px 0;
+  font-size: 8.5pt;
+}
+/* Column widths: sr + name take remaining space; qty + price fixed */
+.items col.c-sr    { width: 5mm; }
+.items col.c-name  { }            /* flex */
+.items col.c-qty   { width: 8mm; }
+.items col.c-price { width: 18mm; }
 
-  /* Totals */
-  .totals-row { display: flex; justify-content: space-between; font-size: 9pt; margin: 1.5px 0; }
-  .totals-row.big { font-size: 13pt; font-weight: bold; margin-top: 4px; }
+/* Header row */
+.items thead th {
+  font-size: 8pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 0;
+  border-top: 1.5px solid #000;
+  border-bottom: 1px dashed #444;
+}
+.items thead th.c-sr    { text-align: left; }
+.items thead th.c-name  { text-align: left; padding-left: 2px; }
+.items thead th.c-qty   { text-align: center; }
+.items thead th.c-price { text-align: right; }
 
-  /* Footer */
-  .footer { font-size: 7.5pt; text-align: center; margin-top: 4px; }
+/* Body cells */
+.items tbody td { padding: 1.5px 0; vertical-align: top; }
+.items tbody td.c-sr    { color: #555; font-size: 8pt; padding-top: 2px; }
+.items tbody td.c-name  { padding-left: 2px; font-weight: bold; }
+.items tbody td.c-qty   { text-align: center; }
+.items tbody td.c-price { text-align: right; white-space: nowrap; }
 
-  /* Hide screen-only elements when printing */
-  @media print {
-    .no-print { display: none !important; }
-  }
+/* Footer separator under last item */
+.items tbody tr:last-child td {
+  border-bottom: 1px dashed #444;
+  padding-bottom: 3px;
+}
+
+/* Modifier / notes line */
+.mod {
+  font-size: 7.5pt;
+  font-weight: normal;
+  color: #444;
+  padding-left: 2px;
+}
+
+/* ── Totals table ── */
+.totals {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin: 2px 0;
+}
+.totals td { padding: 1px 0; }
+.t-lbl { }
+.t-val { text-align: right; white-space: nowrap; }
+.t-bold { font-weight: bold; }
+
+/* Grand total row */
+.grand-total {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 3px 0;
+  border-top: 1.5px solid #000;
+  border-bottom: 1.5px solid #000;
+}
+.grand-total td { padding: 3px 0; }
+.gt-lbl {
+  font-size: 12pt;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.gt-val {
+  font-size: 14pt;
+  font-weight: bold;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Separator row inside totals table */
+.sep-row td { padding: 1px 0; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  font-size: 7.5pt;
+  margin-top: 3px;
+  line-height: 1.5;
+}
 </style>
 </head>
 <body>
 
-<!-- ── Header ── -->
-<div class="center">
-  <h1 class="bold red">${esc(cfg.brand || "SPICE PIZZA")}</h1>
-  ${cfg.tagline ? `<h2>${esc(cfg.tagline)}</h2>` : ""}
-  ${cfg.address ? `<h2>${esc(cfg.address)}</h2>` : ""}
-  ${cfg.phone ? `<h2>Tel: ${esc(cfg.phone)}</h2>` : ""}
-  ${cfg.ntn ? `<h2>${esc(cfg.ntn)}</h2>` : ""}
-</div>
+<!-- ══ HEADER ══ -->
+<p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
+${cfg.tagline ? `<p class="header-sub">${e(cfg.tagline)}</p>` : ""}
+${cfg.address ? `<p class="header-sub">${e(cfg.address)}</p>` : ""}
+${cfg.phone   ? `<p class="header-sub">Tel: ${e(cfg.phone)}</p>` : ""}
+${cfg.ntn     ? `<p class="header-sub">${e(cfg.ntn)}</p>` : ""}
 
-<hr class="divider">
+<div class="dash">${DASH}</div>
 
-<!-- ── Meta ── -->
-<div class="meta">
-  <span>
-    <span>ORDER #<strong>${esc(full.order.order_number)}</strong></span>
-    <span>${esc(tableLabel)}</span>
-    ${full.order.customer_name ? `<span>${esc(full.order.customer_name)}</span>` : ""}
-    ${full.order.customer_phone ? `<span>${esc(full.order.customer_phone)}</span>` : ""}
-    ${full.order.server_name ? `<span>Staff: ${esc(full.order.server_name)}</span>` : ""}
-  </span>
-  <span style="text-align:right">
-    ${full.order.token_number != null ? `<span class="bold red">TOKEN #${full.order.token_number}</span>` : ""}
-    <span>${esc(date)}</span>
-    <span>${esc(time)}</span>
-  </span>
-</div>
+${full.order.token_number != null ? `<p class="token">TOKEN # ${full.order.token_number}</p>
+<div class="dash">${DASH}</div>` : ""}
 
-<hr class="divider">
-
-<!-- ── Items ── -->
-<table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>ITEM</th>
-      <th style="text-align:center">QTY</th>
-      <th style="text-align:right">PRICE</th>
-    </tr>
-  </thead>
-  <tbody>${itemRows}</tbody>
+<!-- ══ ORDER META ══ -->
+<table class="meta-table">
+  <tr>
+    <td class="ml"><b>ORDER #${e(full.order.order_number)}</b></td>
+    <td class="mr"><b>${e(date)}</b></td>
+  </tr>
+  <tr>
+    <td class="ml">${e(tableLabel)}</td>
+    <td class="mr">${e(time)}</td>
+  </tr>
+  ${full.order.server_name ? `<tr><td class="ml">Staff: ${e(full.order.server_name)}</td><td></td></tr>` : ""}
+  ${full.order.customer_name  ? `<tr><td class="ml">${e(full.order.customer_name)}</td><td></td></tr>` : ""}
+  ${full.order.customer_phone ? `<tr><td class="ml">${e(full.order.customer_phone)}</td><td></td></tr>` : ""}
 </table>
 
-<hr class="divider">
+<div class="dash">${DASH}</div>
 
-<!-- ── Totals ── -->
-<div class="totals-row"><span>Subtotal</span><span>${esc(formatRs(totals.subtotal))}</span></div>
-${cfg.showService && totals.service > 0
-  ? `<div class="totals-row"><span>Service (${full.order.service_charge_pct}%)</span><span>${esc(formatRs(totals.service))}</span></div>`
-  : ""}
-${promo.discount > 0
-  ? `<div class="totals-row red"><span>Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}</span><span>- ${esc(formatRs(promo.discount))}</span></div>`
-  : ""}
-${totals.discount > 0
-  ? `<div class="totals-row red"><span>Discount${full.discount?.reason ? ` · ${full.discount.reason}` : ""}</span><span>- ${esc(formatRs(totals.discount))}</span></div>`
-  : ""}
+<!-- ══ ITEMS ══ -->
+<table class="items">
+  <colgroup>
+    <col class="c-sr">
+    <col class="c-name">
+    <col class="c-qty">
+    <col class="c-price">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="c-sr">#</th>
+      <th class="c-name">ITEM</th>
+      <th class="c-qty">QTY</th>
+      <th class="c-price">PRICE</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${itemRows}
+  </tbody>
+</table>
 
-<hr class="divider-solid">
+<!-- ══ TOTALS ══ -->
+<table class="totals">
+  ${totalRows}
+</table>
 
-<div class="totals-row big"><span>TOTAL</span><span class="red">${esc(formatRs(netTotal))}</span></div>
+<!-- ══ GRAND TOTAL ══ -->
+<table class="grand-total">
+  <tr>
+    <td class="gt-lbl">TOTAL</td>
+    <td class="gt-val">${e(formatRs(netTotal))}</td>
+  </tr>
+</table>
 
-${cashPay ? `
-<hr class="divider">
-<div class="totals-row"><span>${cashPay.method.toLowerCase() === "cash" ? "Cash Tendered" : `Paid (${cashPay.method})`}</span><span>${esc(formatRs(Number(cashPay.tendered)))}</span></div>
-<div class="totals-row bold"><span>Change Due</span><span class="red">${esc(formatRs(Math.max(0, Number(cashPay.tendered) - netTotal)))}</span></div>
-` : ""}
+${payRows ? `<table class="totals">${payRows}</table>` : ""}
 
-<hr class="divider">
+<div class="dash">${DASH}</div>
 
-${cfg.showWifi && cfg.wifiSsid ? `<div class="footer">Wi-Fi: <strong>${esc(cfg.wifiSsid)}</strong> / ${esc(cfg.wifiPass)}</div><hr class="divider">` : ""}
+${wifiBlock}
 
-<!-- ── Footer ── -->
+<!-- ══ FOOTER ══ -->
 <div class="footer">
-  ${cfg.footer ? `<p>${esc(cfg.footer)}</p>` : ""}
-  <p><strong>THANK YOU FOR VISITING!</strong></p>
-  <p>*** POWERED BY SPICE PIZZA ***</p>
+  ${cfg.footer ? `<p>${e(cfg.footer)}</p>` : ""}
+  <p><b>** THANK YOU FOR VISITING! **</b></p>
+  <p>SPICE PIZZA</p>
+  <br>
 </div>
 
-<!-- ── Auto-print + close ── -->
+<!-- ══ AUTO PRINT ══ -->
 <script>
   window.addEventListener('load', function () {
     setTimeout(function () {
       window.print();
-      // Close the tab after the print dialog is dismissed
-      setTimeout(function () { window.close(); }, 500);
-    }, 400);
+      setTimeout(function () { window.close(); }, 600);
+    }, 350);
   });
 </script>
-
 </body>
 </html>`;
 
