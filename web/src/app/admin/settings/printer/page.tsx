@@ -11,16 +11,26 @@ export interface PrinterConfig {
   autoCut: boolean;
   printCopies: number;
   codePage: string;
+  // Windows printer selection
+  selectedPrinterName: string;
+}
+
+interface WindowsPrinter {
+  name: string;
+  isDefault: boolean;
+  status: "ready" | "printing" | "unknown";
+  offline: boolean;
 }
 
 const DEFAULT_PRINTER_CFG: PrinterConfig = {
   bridgeUrl: "http://localhost:4000",
-  interfaceType: "escpos_network",
+  interfaceType: "pdf_spooler",
   printerIp: "192.168.1.100",
   paperWidth: "80mm",
   autoCut: true,
   printCopies: 1,
   codePage: "PC437",
+  selectedPrinterName: "",
 };
 
 export default function PrinterSettingsPage() {
@@ -29,6 +39,11 @@ export default function PrinterSettingsPage() {
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Windows printer scanning
+  const [scanState, setScanState] = useState<"idle" | "scanning" | "done" | "error">("idle");
+  const [printers, setPrinters] = useState<WindowsPrinter[]>([]);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -61,26 +76,68 @@ export default function PrinterSettingsPage() {
     }
   };
 
+  // ── Scan Windows printers via bridge /printers endpoint ──────────
+  const scanPrinters = async () => {
+    setScanState("scanning");
+    setScanError(null);
+    setPrinters([]);
+    try {
+      const res = await fetch(`${cfg.bridgeUrl}/printers`, { method: "GET" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Bridge returned ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data.printers || !Array.isArray(data.printers)) {
+        throw new Error("Invalid response from printer bridge.");
+      }
+      setPrinters(data.printers);
+      setScanState("done");
+    } catch (err) {
+      setScanError((err as Error).message);
+      setScanState("error");
+    }
+  };
+
+  const selectPrinter = (name: string) => {
+    setCfg({ ...cfg, selectedPrinterName: name, interfaceType: "pdf_spooler" });
+  };
+
+  // ── Test print ────────────────────────────────────────────────────
   const handleTestPrint = async () => {
     setBusy(true);
-    setTestStatus("Sending test receipt to printer bridge…");
+    setTestStatus("Sending test receipt to printer…");
     try {
+      const body: Record<string, unknown> = {
+        kind: "test",
+        type: "test_receipt",
+        paperWidth: cfg.paperWidth,
+        autoCut: cfg.autoCut,
+        title: "TEST RECEIPT PRINT",
+        timestamp: new Date().toISOString(),
+      };
+
+      // For pdf_spooler mode we also pass printerName; the bridge uses Windows spooler
+      if (cfg.interfaceType === "pdf_spooler" && cfg.selectedPrinterName) {
+        body.printerName = cfg.selectedPrinterName;
+        body.copies = cfg.printCopies;
+      }
+
       const res = await fetch(`${cfg.bridgeUrl}/print`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "test_receipt",
-          paperWidth: cfg.paperWidth,
-          autoCut: cfg.autoCut,
-          title: "TEST RECEIPT PRINT",
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify(body),
       }).catch(() => null);
 
       if (res && res.ok) {
-        setTestStatus("✓ Test print successfully dispatched to thermal printer bridge!");
+        const data = await res.json();
+        if (data.printed) {
+          setTestStatus(`✓ Sent to "${cfg.selectedPrinterName || "printer"}" via Windows spooler!`);
+        } else {
+          setTestStatus(`ℹ️ Bridge acknowledged (${data.mode ?? "stub"} mode): ${data.note ?? "job logged."}`);
+        }
       } else {
-        setTestStatus("ℹ Bridge reachable simulated: Test receipt payload formatted (ESC/POS stream generated).");
+        setTestStatus("ℹ️ Bridge simulated: ESC/POS stream generated (bridge offline).");
       }
     } catch (err) {
       setTestStatus(`✗ Error: ${(err as Error).message}`);
@@ -89,89 +146,228 @@ export default function PrinterSettingsPage() {
     }
   };
 
+  // ── Status colour helpers ─────────────────────────────────────────
+  const printerStatusTone = (p: WindowsPrinter): "green" | "amber" | "neutral" => {
+    if (p.offline) return "amber";
+    if (p.status === "ready") return "green";
+    if (p.status === "printing") return "amber";
+    return "neutral";
+  };
+
+  const selectedPrinter = printers.find((p) => p.name === cfg.selectedPrinterName);
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-ink">Printer Section</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-black tracking-tight text-ink">Printer Settings</h1>
             <Pill tone={status === "online" ? "green" : status === "offline" ? "amber" : "neutral"}>
-              {status === "online" ? "🟢 Bridge Online" : status === "offline" ? "🟠 Bridge Offline (PDF Fallback)" : "Checking…"}
+              {status === "online" ? "🟢 Bridge Online" : status === "offline" ? "🟠 Bridge Offline" : "Checking…"}
             </Pill>
+            {cfg.selectedPrinterName && (
+              <Pill tone={selectedPrinter?.offline ? "amber" : selectedPrinter?.status === "ready" ? "green" : "neutral"}>
+                🖨️ {cfg.selectedPrinterName}
+              </Pill>
+            )}
           </div>
           <p className="mt-1 text-xs text-muted">
-            Configure local ESC/POS thermal printer bridge for kitchen slips & customer bills.
+            Scan Windows printers, select your printer, and configure print options.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={checkBridgeHealth}>
-            Check Connection
+            Check Bridge
           </Button>
           <Button variant="primary" size="sm" onClick={saveSettings}>
-            {saved ? "✓ Saved" : "Save Printer Config"}
+            {saved ? "✓ Saved" : "Save Config"}
           </Button>
         </div>
       </div>
 
-      {/* Top Status Cards */}
+      {/* Status Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          title="Printer Bridge API"
+          title="Bridge URL"
           value={cfg.bridgeUrl}
-          subtext={status === "online" ? "Bridge connected" : "Bridge server offline or PDF mode"}
+          subtext={status === "online" ? "Bridge connected & ready" : "Bridge offline — start npm start"}
+          icon="🌐"
+        />
+        <StatCard
+          title="Selected Printer"
+          value={cfg.selectedPrinterName || "None selected"}
+          subtext={cfg.selectedPrinterName ? `Mode: ${cfg.interfaceType}` : "Scan and select a printer below"}
           icon="🖨️"
         />
         <StatCard
           title="Paper Format"
           value={cfg.paperWidth}
-          subtext={cfg.autoCut ? "Auto-cutter enabled" : "Manual tear off"}
+          subtext={`${cfg.printCopies} cop${cfg.printCopies === 1 ? "y" : "ies"} · ${cfg.autoCut ? "Auto-cut on" : "Manual tear"}`}
           icon="📄"
-        />
-        <StatCard
-          title="Interface Mode"
-          value={cfg.interfaceType === "escpos_network" ? "ESC/POS Network" : "PDF Spooler"}
-          subtext={`Copies: ${cfg.printCopies} | Encoding: ${cfg.codePage}`}
-          icon="⚡"
         />
       </div>
 
-      {/* Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left column */}
         <div className="lg:col-span-7 space-y-5">
+
+          {/* ── Bridge Connection ─────────────────────────────────── */}
           <Card className="p-5 space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Bridge Connection Settings</h2>
-            
+            <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Bridge Connection</h2>
             <InputField
-              label="Printer Bridge Endpoint URL"
+              label="Printer Bridge URL"
               value={cfg.bridgeUrl}
               onChange={(e) => setCfg({ ...cfg, bridgeUrl: e.target.value })}
-              helperText="URL of local Node.js printer bridge (e.g. http://localhost:4000)."
+              helperText="Local Node.js bridge running on this PC (default: http://localhost:4000)."
             />
+          </Card>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
-                Communication Protocol
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  { id: "escpos_network", label: "ESC/POS Network (LAN)" },
-                  { id: "escpos_usb", label: "ESC/POS Direct USB" },
-                  { id: "pdf_spooler", label: "PDF System Spooler" },
-                ].map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => setCfg({ ...cfg, interfaceType: mode.id as any })}
-                    className={`p-3 rounded-xl border text-xs font-semibold text-left transition-all ${
-                      cfg.interfaceType === mode.id
-                        ? "border-brand bg-brand-tint/60 text-brand shadow-2xs font-bold"
-                        : "border-hairline hover:border-brand/30 text-ink-muted"
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
+          {/* ── Windows Printer Scanner ───────────────────────────── */}
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-brand">
+                🖨️ Windows Printer Selection
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                loading={scanState === "scanning"}
+                onClick={scanPrinters}
+              >
+                {scanState === "scanning" ? "Scanning…" : "Scan Printers"}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted">
+              Click <strong>Scan Printers</strong> to discover all printers connected to this Windows PC.
+              The bridge must be running and online.
+            </p>
+
+            {/* Error state */}
+            {scanState === "error" && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-sm">
+                <p className="font-semibold text-amber-800 mb-1">⚠️ Scan failed</p>
+                <p className="text-xs text-amber-700">{scanError}</p>
+                <p className="text-xs text-amber-600 mt-2">
+                  Make sure the printer bridge is running: <code className="font-mono">cd printer-bridge && npm start</code>
+                </p>
               </div>
+            )}
+
+            {/* Printer List */}
+            {scanState === "done" && printers.length === 0 && (
+              <div className="rounded-xl border border-hairline bg-cream/40 p-4 text-center text-xs text-muted">
+                No printers found. Make sure printers are installed in Windows.
+              </div>
+            )}
+
+            {(scanState === "done" || (scanState === "idle" && cfg.selectedPrinterName)) && printers.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-ink-muted">
+                  {printers.length} printer{printers.length !== 1 ? "s" : ""} found — select one to use:
+                </p>
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {printers.map((printer) => {
+                    const isSelected = cfg.selectedPrinterName === printer.name;
+                    return (
+                      <button
+                        key={printer.name}
+                        type="button"
+                        onClick={() => selectPrinter(printer.name)}
+                        className={[
+                          "w-full text-left rounded-xl border px-4 py-3 transition-all",
+                          isSelected
+                            ? "border-brand bg-brand-tint/60 shadow-xs"
+                            : "border-hairline hover:border-brand/30 bg-surface hover:bg-cream/40",
+                          printer.offline ? "opacity-60" : "",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">
+                              {isSelected ? "✅" : printer.offline ? "🔴" : "🖨️"}
+                            </span>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-semibold truncate ${isSelected ? "text-brand" : "text-ink"}`}>
+                                {printer.name}
+                              </p>
+                              <p className="text-xs text-muted mt-0.5">
+                                {printer.isDefault ? "Default · " : ""}
+                                {printer.offline ? "Offline" : printer.status === "ready" ? "Ready" : "Status unknown"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {printer.isDefault && (
+                              <span className="text-xs font-bold bg-brand/10 text-brand px-2 py-0.5 rounded-full">
+                                Default
+                              </span>
+                            )}
+                            {printer.offline && (
+                              <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                                Offline
+                              </span>
+                            )}
+                            {!printer.offline && printer.status === "ready" && (
+                              <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                Ready
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Currently selected (when list not shown) */}
+            {scanState === "idle" && cfg.selectedPrinterName && printers.length === 0 && (
+              <div className="rounded-xl border border-brand/30 bg-brand-tint/20 p-3.5 flex items-center gap-3">
+                <span className="text-xl">✅</span>
+                <div>
+                  <p className="text-sm font-bold text-brand">{cfg.selectedPrinterName}</p>
+                  <p className="text-xs text-muted">Saved printer — click Scan Printers to refresh the list.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Manual override */}
+            <div className="border-t border-hairline pt-4">
+              <InputField
+                label="Manual Printer Name (optional)"
+                value={cfg.selectedPrinterName}
+                onChange={(e) => setCfg({ ...cfg, selectedPrinterName: e.target.value })}
+                helperText='Type the exact Windows printer name if scan is unavailable (e.g. "Black Copper 80").'
+              />
+            </div>
+          </Card>
+
+          {/* ── Communication Protocol ────────────────────────────── */}
+          <Card className="p-5 space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Communication Protocol</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { id: "pdf_spooler", label: "PDF → Windows Spooler", desc: "Send PDF to any Windows printer" },
+                { id: "escpos_network", label: "ESC/POS Network (LAN)", desc: "Direct to thermal via IP" },
+                { id: "escpos_usb", label: "ESC/POS Direct USB", desc: "Direct USB thermal printer" },
+              ].map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => setCfg({ ...cfg, interfaceType: mode.id as any })}
+                  className={`p-3 rounded-xl border text-xs text-left transition-all ${
+                    cfg.interfaceType === mode.id
+                      ? "border-brand bg-brand-tint/60 text-brand shadow-2xs font-bold"
+                      : "border-hairline hover:border-brand/30 text-ink-muted"
+                  }`}
+                >
+                  <p className="font-semibold">{mode.label}</p>
+                  <p className="text-xs opacity-70 mt-0.5">{mode.desc}</p>
+                </button>
+              ))}
             </div>
 
             {cfg.interfaceType === "escpos_network" && (
@@ -179,14 +375,14 @@ export default function PrinterSettingsPage() {
                 label="Thermal Printer IP Address"
                 value={cfg.printerIp}
                 onChange={(e) => setCfg({ ...cfg, printerIp: e.target.value })}
-                helperText="Static LAN IP assigned to thermal printer (Port 9100)."
+                helperText="Static LAN IP of thermal printer (Port 9100)."
               />
             )}
           </Card>
 
+          {/* ── Paper & Format ────────────────────────────────────── */}
           <Card className="p-5 space-y-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-brand">Paper & Print Formatting</h2>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
@@ -207,7 +403,6 @@ export default function PrinterSettingsPage() {
                   ))}
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
                   Print Copies per Order
@@ -222,11 +417,10 @@ export default function PrinterSettingsPage() {
                 />
               </div>
             </div>
-
             <div className="border-t border-hairline pt-3">
               <Switch
                 label="Enable Auto Hardware Paper Cut"
-                description="Sends GS V 66 command to trigger automatic guillotine cutter"
+                description="Sends GS V 66 command to trigger automatic guillotine cutter (thermal printers only)"
                 checked={cfg.autoCut}
                 onChange={(val) => setCfg({ ...cfg, autoCut: val })}
               />
@@ -234,14 +428,29 @@ export default function PrinterSettingsPage() {
           </Card>
         </div>
 
-        {/* Test Printer Panel */}
+        {/* Right column — Test & Log */}
         <div className="lg:col-span-5 space-y-5">
           <Card className="p-5 space-y-4 border-brand/20 bg-gradient-to-br from-surface to-brand-tint/20">
             <h2 className="text-sm font-bold uppercase tracking-wider text-brand flex items-center gap-2">
-              <span>⚡ Printer Hardware Diagnostic</span>
+              ⚡ Printer Test
             </h2>
+
+            {cfg.selectedPrinterName ? (
+              <div className="rounded-xl border border-brand/20 bg-brand-tint/10 p-3 flex items-center gap-3">
+                <span className="text-2xl">🖨️</span>
+                <div>
+                  <p className="text-sm font-bold text-brand">{cfg.selectedPrinterName}</p>
+                  <p className="text-xs text-muted">{cfg.interfaceType} · {cfg.paperWidth} · {cfg.printCopies} copies</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                ⚠️ No printer selected yet. Scan and select a printer above.
+              </div>
+            )}
+
             <p className="text-xs text-ink-muted leading-relaxed">
-              Verify thermal printer connectivity and ESC/POS command stream generation by triggering a hardware test slip.
+              Sends a test receipt payload to the bridge. In <strong>PDF Spooler</strong> mode, the bridge forwards it to your selected Windows printer.
             </p>
 
             <Button
@@ -250,27 +459,57 @@ export default function PrinterSettingsPage() {
               loading={busy}
               onClick={handleTestPrint}
             >
-              🖨️ Send Hardware Test Print
+              🖨️ Send Test Print
             </Button>
 
             {testStatus && (
-              <div className="rounded-xl border border-hairline bg-surface p-3.5 text-xs font-mono text-ink leading-normal">
+              <div className="rounded-xl border border-hairline bg-surface p-3.5 text-xs font-mono text-ink leading-relaxed">
                 {testStatus}
               </div>
             )}
           </Card>
 
           <Card className="p-5 space-y-3 bg-surface">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted">ESC/POS Command Log</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Bridge Status Log</h3>
             <div className="rounded-xl bg-gray-950 p-4 font-mono text-xs text-green-400 space-y-1">
-              <div>[ESC/POS INIT] \x1B\x40</div>
-              <div>[CODE PAGE] PC437 \x1B\x74\x00</div>
-              <div>[JUSTIFY CENTER] \x1B\x61\x01</div>
-              <div>[BOLD ON] \x1B\x45\x01 SPICE PIZZA</div>
-              <div>[FEED & CUT] \x1D\x56\x42\x00</div>
+              <div>[BRIDGE] {cfg.bridgeUrl}</div>
+              <div>[STATUS] {status === "online" ? "✓ ONLINE" : status === "offline" ? "✗ OFFLINE" : "… CHECKING"}</div>
+              <div>[MODE] {cfg.interfaceType.toUpperCase()}</div>
+              {cfg.selectedPrinterName && (
+                <div>[PRINTER] {cfg.selectedPrinterName}</div>
+              )}
+              {cfg.interfaceType === "escpos_network" && (
+                <>
+                  <div>[CODE PAGE] PC437 \x1B\x74\x00</div>
+                  <div>[JUSTIFY CENTER] \x1B\x61\x01</div>
+                  <div>[BOLD ON] \x1B\x45\x01 SPICE PIZZA</div>
+                  <div>[FEED & CUT] \x1D\x56\x42\x00</div>
+                </>
+              )}
               <div className="text-gray-500 pt-2 border-t border-gray-800">
-                Ready to stream to {cfg.bridgeUrl}
+                {cfg.selectedPrinterName
+                  ? `Ready → "${cfg.selectedPrinterName}"`
+                  : "Select a printer to enable printing"}
               </div>
+            </div>
+          </Card>
+
+          {/* Setup Guide */}
+          <Card className="p-5 space-y-3 bg-surface">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Quick Setup Guide</h3>
+            <ol className="text-xs text-ink-muted space-y-2 list-decimal list-inside leading-relaxed">
+              <li>Open a terminal in <code className="font-mono text-brand">printer-bridge/</code></li>
+              <li>Run <code className="font-mono text-brand">npm start</code> (bridge starts on port 4000)</li>
+              <li>Click <strong>Scan Printers</strong> above to list Windows printers</li>
+              <li>Select <strong>Black Copper 80</strong> (or your printer) from the list</li>
+              <li>Click <strong>Save Config</strong> then <strong>Send Test Print</strong></li>
+            </ol>
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700">
+              <strong>PDF Printing tip:</strong> Install{" "}
+              <a href="https://www.sumatrapdfreader.org/" target="_blank" rel="noreferrer" className="underline text-amber-800">
+                SumatraPDF
+              </a>{" "}
+              for the most reliable silent PDF-to-printer output on Windows.
             </div>
           </Card>
         </div>
