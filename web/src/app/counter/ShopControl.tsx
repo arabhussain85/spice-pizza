@@ -4,6 +4,30 @@ import { useCallback, useEffect, useState } from "react";
 import { getShiftStatus, openShift, closeShift, type ShiftStatus } from "./shift-actions";
 import { useConfirm } from "@/components/Confirm";
 
+/** Opens a PDF in a new tab and immediately triggers the Windows print dialog. */
+function autoPrint(pdfPath: string, win?: Window | null) {
+  const target = win ?? window.open("", "_blank");
+  if (!target) { window.open(pdfPath, "_blank"); return; }
+  const html = [
+    '<!DOCTYPE html><html><head><title>Printing\u2026</title>',
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111}',
+    'iframe{position:fixed;inset:0;width:100%;height:100%;border:none}',
+    '#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);',
+    'color:#fff;font:600 14px/1.6 system-ui;text-align:center;pointer-events:none}</style>',
+    '</head><body>',
+    '<div id="msg">\uD83D\uDDA8\uFE0F Preparing print\u2026<br><small>Print dialog will open automatically.</small></div>',
+    '<iframe id="f" src="' + pdfPath + '"></iframe>',
+    '<script>',
+    'var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
+    'function go(){if(done)return;done=true;m.style.display="none";',
+    'try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
+    'f.onload=function(){setTimeout(go,600);};setTimeout(go,3500);',
+    '<\/script></body></html>',
+  ].join('');
+  target.document.write(html);
+  target.document.close();
+}
+
 /** Open Shop / Close Shop control. Closing prints the daily Z-report and resets the order token counter. */
 export function ShopControl() {
   const { confirm, notify } = useConfirm();
@@ -54,8 +78,7 @@ export function ShopControl() {
         return;
       }
       const url = `/api/print/zreport/${res.shiftId}`;
-      if (printWin) printWin.location.href = url;
-      else window.open(url, "_blank");
+      autoPrint(url, printWin);
       await refresh();
     } finally {
       setBusy(false);

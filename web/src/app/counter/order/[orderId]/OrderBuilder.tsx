@@ -1,6 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+/** Opens a PDF URL in an auto-print tab. Print dialog fires automatically.
+ *  Uses the Windows default printer — no bridge or local software needed. */
+function autoPrint(pdfPath: string, win?: Window | null) {
+  const target = win ?? window.open("", "_blank");
+  if (!target) { window.open(pdfPath, "_blank"); return; }
+  const html = [
+    '<!DOCTYPE html><html><head><title>Printing\u2026</title>',
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111}',
+    'iframe{position:fixed;inset:0;width:100%;height:100%;border:none}',
+    '#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);',
+    'color:#fff;font:600 14px/1.6 system-ui;text-align:center;pointer-events:none}</style>',
+    '</head><body>',
+    '<div id="msg">\uD83D\uDDA8\uFE0F Preparing print\u2026<br><small>Print dialog will open automatically.</small></div>',
+    '<iframe id="f" src="' + pdfPath + '"></iframe>',
+    '<script>',
+    'var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
+    'function go(){if(done)return;done=true;m.style.display="none";',
+    'try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
+    'f.onload=function(){setTimeout(go,600);};setTimeout(go,3500);',
+    '<\/script></body></html>',
+  ].join('');
+  target.document.write(html);
+  target.document.close();
+}
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/Confirm";
 import { createClient } from "@/lib/supabase/client";
@@ -201,12 +226,9 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
         setBanner(res.error);
         return;
       }
-      const url = `/api/print/round/${res.roundId}`;
-      if (printWin) printWin.location.href = url;
-      else {
-        window.open(url, "_blank");
-        setBanner("Allow pop-ups to auto-print, or reprint from the bill.");
-      }
+      // autoPrint reuses the already-opened tab and injects an auto-print wrapper
+      // so the Windows print dialog fires automatically using the default printer.
+      autoPrint(`/api/print/round/${res.roundId}`, printWin);
       await refetchOrder();
       setCartOpen(false);
     } finally {

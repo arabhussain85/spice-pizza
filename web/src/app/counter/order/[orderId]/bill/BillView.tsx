@@ -1,6 +1,39 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+
+/**
+ * Opens a PDF in a new tab and immediately triggers the browser print dialog.
+ * The Windows print dialog will pre-select the system default printer (e.g. Black Copper 80).
+ * Staff just presses Enter — no local bridge or extra software needed.
+ */
+function autoPrint(pdfPath: string) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    // Popup blocked — fallback to raw PDF
+    window.open(pdfPath, "_blank");
+    return;
+  }
+  const html = [
+    '<!DOCTYPE html><html><head><title>Printing\u2026</title>',
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111}',
+    'iframe{position:fixed;inset:0;width:100%;height:100%;border:none}',
+    '#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);',
+    'color:#fff;font:600 14px/1.6 system-ui;text-align:center;pointer-events:none}</style>',
+    '</head><body>',
+    '<div id="msg">\uD83D\uDDA8\uFE0F Preparing print\u2026<br><small>Print dialog will open automatically.</small></div>',
+    '<iframe id="f" src="' + pdfPath + '"></iframe>',
+    '<script>',
+    'var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
+    'function go(){if(done)return;done=true;m.style.display="none";',
+    'try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
+    'f.onload=function(){setTimeout(go,600);};',
+    'setTimeout(go,3500);',
+    '<\/script></body></html>',
+  ].join('');
+  win.document.write(html);
+  win.document.close();
+}
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchOrderFull, type OrderFull } from "@/lib/queries";
@@ -112,7 +145,7 @@ export function BillView({ orderId }: { orderId: string }) {
             </div>
             <div className="opacity-0 animate-fade-up animate-delay-3 w-full flex flex-col sm:flex-row gap-4" style={{animationFillMode:'forwards'}}>
               <button
-                onClick={() => window.open(`/api/print/bill/${orderId}`, "_blank")}
+                onClick={() => autoPrint(`/api/print/bill/${orderId}`)}
                 className="flex-1 h-12 flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
               >
                 <span className="material-symbols-outlined" style={{fontSize:'20px'}}>print</span>
