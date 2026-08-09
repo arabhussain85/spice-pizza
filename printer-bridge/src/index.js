@@ -100,14 +100,18 @@ async function listWindowsPrinters() {
 // ──────────────────────────────────────────────────────────────────
 // Print a PDF to a named Windows printer
 // ──────────────────────────────────────────────────────────────────
-async function printPdfToWindows(pdfBase64, printerName, copies = 1) {
+async function printPdfToWindows(pdfBase64, printerName, copies = 1, paperWidth = "80mm") {
   // Write PDF to a temp file
   const tmpDir = os.tmpdir();
   const tmpFile = path.join(tmpDir, `spice_print_${Date.now()}.pdf`);
   const pdfBuffer = Buffer.from(pdfBase64, "base64");
   fs.writeFileSync(tmpFile, pdfBuffer);
 
-  console.log(`[print] Sending to Windows printer: "${printerName}" (${copies} copies) — ${tmpFile}`);
+  console.log(`[print] Sending to Windows printer: "${printerName}" (${copies}x, ${paperWidth}) — ${tmpFile}`);
+
+  // SumatraPDF print-settings:
+  //   "Nx,fit" = N copies, scale-to-fit (avoids infinite blank overfeeds on roll printers)
+  const printSettings = `${copies}x,fit`;
 
   // Try SumatraPDF first (most reliable silent PDF printing on Windows)
   const sumatraPaths = [
@@ -119,7 +123,9 @@ async function printPdfToWindows(pdfBase64, printerName, copies = 1) {
   for (const sumatraPath of sumatraPaths) {
     if (sumatraPath !== "SumatraPDF.exe" && !fs.existsSync(sumatraPath)) continue;
     try {
-      const cmd = `"${sumatraPath}" -print-to "${printerName}" -print-settings "${copies}x" -silent "${tmpFile}"`;
+      // -print-settings "Nx,fit" scales to fit the printer paper (no blank-page overflow)
+      const cmd = `"${sumatraPath}" -print-to "${printerName}" -print-settings "${printSettings}" -silent "${tmpFile}"`;
+      console.log(`[print] SumatraPDF: ${cmd}`);
       await execAsync(cmd, { timeout: 30000 });
       fs.unlink(tmpFile, () => {});
       return { method: "SumatraPDF", printer: printerName };
@@ -128,20 +134,22 @@ async function printPdfToWindows(pdfBase64, printerName, copies = 1) {
     }
   }
 
-  // Fallback: PowerShell Out-Printer
+  // Fallback: PowerShell with Shell.Application InvokeVerb PrintTo
+  // (avoids blank infinite-feed caused by Start-Process -Verb Print)
   try {
-    const ps = `Start-Process -FilePath "${tmpFile}" -Verb Print -PassThru | Wait-Process -Timeout 30`;
-    // For named printer, use: rundll32 printui.dll,PrintUIEntry
-    // Most reliable cross-version method:
-    const psCmd = `powershell -NoProfile -Command "
-      $job = Start-Process -FilePath '${tmpFile}' -Verb PrintTo -ArgumentList '\\"${printerName}\\"' -PassThru;
-      Start-Sleep -Seconds 5;
-      if ($job -and !$job.HasExited) { $job.Kill() };
-      exit 0
-    "`;
-    await execAsync(psCmd.replace(/\n/g, " "), { timeout: 30000 });
+    const safeFile = tmpFile.replace(/\\/g, "\\\\");
+    const safePrinter = printerName.replace(/"/g, '\\"');
+    const psCmd = [
+      "powershell -NoProfile -NonInteractive -Command",
+      `"$sh = New-Object -ComObject Shell.Application;`,
+      `$dir = $sh.NameSpace([System.IO.Path]::GetDirectoryName('${safeFile}'));`,
+      `$item = $dir.ParseName([System.IO.Path]::GetFileName('${safeFile}'));`,
+      `$item.InvokeVerb('PrintTo');`,
+      `Start-Sleep -Seconds 8;",`,
+    ].join(" ");
+    await execAsync(psCmd, { timeout: 30000 });
     fs.unlink(tmpFile, () => {});
-    return { method: "PrintTo-verb", printer: printerName };
+    return { method: "Shell.PrintTo", printer: printerName };
   } catch (err) {
     fs.unlink(tmpFile, () => {});
     throw new Error(`Could not print to "${printerName}": ${err.message}. Install SumatraPDF for reliable PDF printing.`);
@@ -199,7 +207,12 @@ const server = http.createServer(async (req, res) => {
         return json(res, 400, { ok: false, error: "printerName is required. Call GET /printers to list available printers." });
       }
       try {
-        const result = await printPdfToWindows(job.pdfBase64, job.printerName, job.copies || 1);
+        const result = await printPdfToWindows(
+          job.pdfBase64,
+          job.printerName,
+          job.copies || 1,
+          job.paperWidth || "80mm"
+        );
         return json(res, 200, { ok: true, mode: "pdf_spooler", printed: true, ...result });
       } catch (err) {
         return json(res, 503, { ok: false, error: String(err.message || err) });

@@ -2,35 +2,83 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+// ── Printer config shape stored in localStorage ───────────────────
+interface SavedPrinterCfg {
+  bridgeUrl?: string;
+  selectedPrinterName?: string;
+  printCopies?: number;
+}
+
 /**
- * Opens a PDF in a new tab and immediately triggers the browser print dialog.
- * The Windows print dialog will pre-select the system default printer (e.g. Black Copper 80).
- * Staff just presses Enter — no local bridge or extra software needed.
+ * Prints a bill receipt by sending it through the local printer bridge
+ * (silent Windows spooler) when configured, or falling back to a
+ * browser print window with the correct 80mm @page size.
+ *
+ * @param orderId  - The order ID to print
+ * @param pdfPath  - Path to the PDF (used as browser fallback)
  */
-function autoPrint(pdfPath: string) {
+async function printReceipt(orderId: string, pdfPath: string) {
+  // 1. Try to read saved printer config
+  let cfg: SavedPrinterCfg = {};
+  try {
+    const raw = localStorage.getItem("spice_pizza_printer_config");
+    if (raw) cfg = JSON.parse(raw);
+  } catch {/* ignore */}
+
+  const bridgeUrl = cfg.bridgeUrl || "http://localhost:4000";
+  const printerName = cfg.selectedPrinterName || "";
+  const copies = cfg.printCopies || 1;
+
+  // 2. If a printer is configured, use the bridge (silent Windows print)
+  if (printerName) {
+    try {
+      const res = await fetch(`/api/print-to-bridge/bill/${orderId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bridgeUrl, printerName, copies }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        // Silent print succeeded — no browser dialog needed
+        return;
+      }
+      // Bridge error: fall through to browser fallback
+      console.warn("[print] Bridge error:", data.error);
+    } catch (err) {
+      console.warn("[print] Bridge unreachable, falling back to browser:", err);
+    }
+  }
+
+  // 3. Browser fallback: open a window with correct 80mm @page CSS
   const win = window.open("", "_blank");
   if (!win) {
-    // Popup blocked — fallback to raw PDF
     window.open(pdfPath, "_blank");
     return;
   }
+  // Build an HTML page that embeds the PDF and triggers print with 80mm paper size
   const html = [
-    '<!DOCTYPE html><html><head><title>Printing\u2026</title>',
-    '<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111}',
-    'iframe{position:fixed;inset:0;width:100%;height:100%;border:none}',
-    '#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);',
-    'color:#fff;font:600 14px/1.6 system-ui;text-align:center;pointer-events:none}</style>',
-    '</head><body>',
-    '<div id="msg">\uD83D\uDDA8\uFE0F Preparing print\u2026<br><small>Print dialog will open automatically.</small></div>',
-    '<iframe id="f" src="' + pdfPath + '"></iframe>',
-    '<script>',
-    'var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
-    'function go(){if(done)return;done=true;m.style.display="none";',
-    'try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
-    'f.onload=function(){setTimeout(go,600);};',
-    'setTimeout(go,3500);',
-    '<\/script></body></html>',
-  ].join('');
+    '<!DOCTYPE html><html>',
+    '<head><title>Print Receipt</title>',
+    '<style>',
+    '  @page { size: 80mm auto; margin: 0; }',
+    '  * { margin: 0; padding: 0; box-sizing: border-box; }',
+    '  body { background: #111; width: 80mm; }',
+    '  iframe { width: 80mm; height: 100vh; border: none; display: block; }',
+    '  #msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);',
+    '    color: #fff; font: 600 14px/1.6 system-ui; text-align: center; }',
+    '</style></head>',
+    '<body>',
+    '  <div id="msg">🖨️ Opening print dialog…<br><small>Select your 80mm receipt printer.</small></div>',
+    '  <iframe id="f" src="' + pdfPath + '"></iframe>',
+    '  <script>',
+    '    var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
+    '    function go(){if(done)return;done=true;m.style.display="none";',
+    '      try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
+    '    f.onload=function(){setTimeout(go,800);};',
+    '    setTimeout(go,4000);',
+    '  <\/script>',
+    '</body></html>',
+  ].join('\n');
   win.document.write(html);
   win.document.close();
 }
@@ -145,7 +193,7 @@ export function BillView({ orderId }: { orderId: string }) {
             </div>
             <div className="opacity-0 animate-fade-up animate-delay-3 w-full flex flex-col sm:flex-row gap-4" style={{animationFillMode:'forwards'}}>
               <button
-                onClick={() => autoPrint(`/api/print/bill/${orderId}`)}
+                onClick={() => printReceipt(orderId, `/api/print/bill/${orderId}`)}
                 className="flex-1 h-12 flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
               >
                 <span className="material-symbols-outlined" style={{fontSize:'20px'}}>print</span>
@@ -343,7 +391,7 @@ export function BillView({ orderId }: { orderId: string }) {
         {/* Actions */}
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => window.open(`/api/print/bill/${orderId}`, "_blank")}
+            onClick={() => printReceipt(orderId, `/api/print/bill/${orderId}`)}
             className="flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold h-12 px-5 rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
           >
             <span className="material-symbols-outlined" style={{fontSize:'18px'}}>print</span>
