@@ -2,85 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// ── Printer config shape stored in localStorage ───────────────────
-interface SavedPrinterCfg {
-  bridgeUrl?: string;
-  selectedPrinterName?: string;
-  printCopies?: number;
-}
-
 /**
- * Prints a bill receipt by sending it through the local printer bridge
- * (silent Windows spooler) when configured, or falling back to a
- * browser print window with the correct 80mm @page size.
- *
- * @param orderId  - The order ID to print
- * @param pdfPath  - Path to the PDF (used as browser fallback)
+ * Opens the 80mm HTML receipt page in a new tab.
+ * The page auto-calls window.print() and sets @page { size: 80mm auto }
+ * so the browser print dialog uses the correct paper width — no infinite roll.
+ * No local bridge or extra software needed.
  */
-async function printReceipt(orderId: string, pdfPath: string) {
-  // 1. Try to read saved printer config
-  let cfg: SavedPrinterCfg = {};
-  try {
-    const raw = localStorage.getItem("spice_pizza_printer_config");
-    if (raw) cfg = JSON.parse(raw);
-  } catch {/* ignore */}
-
-  const bridgeUrl = cfg.bridgeUrl || "http://localhost:4000";
-  const printerName = cfg.selectedPrinterName || "";
-  const copies = cfg.printCopies || 1;
-
-  // 2. If a printer is configured, use the bridge (silent Windows print)
-  if (printerName) {
-    try {
-      const res = await fetch(`/api/print-to-bridge/bill/${orderId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bridgeUrl, printerName, copies }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) {
-        // Silent print succeeded — no browser dialog needed
-        return;
-      }
-      // Bridge error: fall through to browser fallback
-      console.warn("[print] Bridge error:", data.error);
-    } catch (err) {
-      console.warn("[print] Bridge unreachable, falling back to browser:", err);
-    }
-  }
-
-  // 3. Browser fallback: open a window with correct 80mm @page CSS
-  const win = window.open("", "_blank");
-  if (!win) {
-    window.open(pdfPath, "_blank");
-    return;
-  }
-  // Build an HTML page that embeds the PDF and triggers print with 80mm paper size
-  const html = [
-    '<!DOCTYPE html><html>',
-    '<head><title>Print Receipt</title>',
-    '<style>',
-    '  @page { size: 80mm auto; margin: 0; }',
-    '  * { margin: 0; padding: 0; box-sizing: border-box; }',
-    '  body { background: #111; width: 80mm; }',
-    '  iframe { width: 80mm; height: 100vh; border: none; display: block; }',
-    '  #msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);',
-    '    color: #fff; font: 600 14px/1.6 system-ui; text-align: center; }',
-    '</style></head>',
-    '<body>',
-    '  <div id="msg">🖨️ Opening print dialog…<br><small>Select your 80mm receipt printer.</small></div>',
-    '  <iframe id="f" src="' + pdfPath + '"></iframe>',
-    '  <script>',
-    '    var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
-    '    function go(){if(done)return;done=true;m.style.display="none";',
-    '      try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
-    '    f.onload=function(){setTimeout(go,800);};',
-    '    setTimeout(go,4000);',
-    '  <\/script>',
-    '</body></html>',
-  ].join('\n');
-  win.document.write(html);
-  win.document.close();
+function printReceipt(orderId: string) {
+  window.open(`/api/print/bill/${orderId}/html`, "_blank");
 }
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
