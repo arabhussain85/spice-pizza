@@ -12,6 +12,7 @@ import { fetchActivePromotions, fetchMenuMeta, promoTotals, type Promotion, type
 import { cn } from "@/components/ui";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useConfirm } from "@/components/Confirm";
+import { LoadingScreen } from "@/components/Loader";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
 
 export function BillView({ orderId }: { orderId: string }) {
@@ -133,11 +134,8 @@ export function BillView({ orderId }: { orderId: string }) {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#FCF9F5] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-[#605e5b]">
-          <span className="material-symbols-outlined text-4xl text-[#e4beba]">receipt_long</span>
-          <span className="text-sm font-medium">Loading bill…</span>
-        </div>
+      <div className="min-h-screen bg-[#FCF9F5]">
+        <LoadingScreen label="Loading bill…" />
       </div>
     );
   }

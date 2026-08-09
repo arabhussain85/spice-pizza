@@ -19,6 +19,7 @@ import { cn } from "@/components/ui";
 import { ItemPhoto } from "@/components/ItemPhoto";
 import { ItemModal, type AddSelection } from "./ItemModal";
 import { CustomerCorner } from "./CustomerCorner";
+import { LoadingScreen } from "@/components/Loader";
 import { addLineItem, deleteLineItem, sendToKitchen } from "../../actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 
@@ -213,8 +214,10 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
     }
   }
 
-  const table = order?.table;
-  const otype = order?.order.order_type ?? "dine_in";
+  if (!order) return <div className="min-h-screen bg-[#FCF9F5]"><LoadingScreen label="Loading order…" /></div>;
+
+  const table = order.table;
+  const otype = order.order.order_type ?? "dine_in";
   const typeNo = order?.order.type_number ?? null;
   const token = order?.order.token_number ?? null;
   const headline =

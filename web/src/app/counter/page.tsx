@@ -9,6 +9,7 @@ import { ShopControl } from "./ShopControl";
 import { OffTableOrders } from "./OffTableOrders";
 import { cn } from "@/components/ui";
 import { useConfirm } from "@/components/Confirm";
+import { LoadingScreen } from "@/components/Loader";
 
 export default function CounterHomePage() {
   const { confirm, notify } = useConfirm();
@@ -126,12 +127,7 @@ export default function CounterHomePage() {
               Couldn&apos;t load tables: {error}
             </div>
           )}
-          {!rows && !error && (
-            <div className="py-16 text-center text-sm font-semibold text-[#605e5b]">
-              <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-3">table_restaurant</span>
-              Loading table grid…
-            </div>
-          )}
+          {!rows && !error && <LoadingScreen label="Loading tables…" />}
           {rows && rows.length === 0 && !error && (
             <div className="py-16 text-center text-sm font-semibold text-[#605e5b]">
               <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-3">table_restaurant</span>

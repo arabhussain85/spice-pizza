@@ -1,5 +1,18 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage, type PDFImage } from "pdf-lib";
 import { LOGO_PNG_BASE64, LOGO_W, LOGO_H } from "./logo-data";
+
+// Draw the logo rotated a few degrees clockwise (to straighten the mark), pivoting
+// around its centre so the placement stays put. cx = horizontal centre, topY = top edge.
+const LOGO_TILT_DEG = -7; // negative = clockwise in pdf-lib
+function drawLogo(page: PDFPage, img: PDFImage, cx: number, topY: number, w: number, h: number) {
+  const rad = (LOGO_TILT_DEG * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const cyCenter = topY - h / 2;
+  const x = cx - (w / 2) * cos + (h / 2) * sin;
+  const y = cyCenter - (w / 2) * sin - (h / 2) * cos;
+  page.drawImage(img, { x, y, width: w, height: h, rotate: degrees(LOGO_TILT_DEG) });
+}
 
 // 80mm thermal-receipt renderers matching the Stitch kitchen + customer-bill slips.
 const W = 226.77; // 80mm in pt
@@ -120,7 +133,7 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   let y = page.getHeight() - M;
 
   // ---- logo + business header ----
-  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  drawLogo(page, logo, W / 2, y, logoW, logoH);
   y -= logoH + 8;
   d.center(slip.brand.toUpperCase(), y, 15, bold, INK); y -= 13;
   if (slip.tagline) { d.center(slip.tagline, y, 8, italic, MUTED); y -= 11; }
@@ -257,7 +270,7 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   const d = drawing(page);
   let y = page.getHeight() - M;
 
-  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  drawLogo(page, logo, W / 2, y, logoW, logoH);
   y -= logoH + 20;
   d.center("KITCHEN ORDER", y, 14, bold, INK);
   y -= 18;
@@ -359,7 +372,7 @@ export async function renderZReport(z: ZReport): Promise<Uint8Array> {
   const d = drawing(page);
   let y = page.getHeight() - M;
 
-  page.drawImage(logo, { x: (W - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+  drawLogo(page, logo, W / 2, y, logoW, logoH);
   y -= logoH + 8;
   d.center(z.brand.toUpperCase(), y, 15, bold, INK); y -= 13;
   if (z.address) { for (const ln of wrap(z.address, font, 8, RIGHT - LEFT)) { d.center(ln, y, 8, font, INK); y -= 10; } }
