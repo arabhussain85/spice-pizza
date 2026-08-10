@@ -5,6 +5,7 @@ import { billTotals } from "@/lib/order-math";
 import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promotions";
 import { fetchReceiptConfig } from "@/lib/receipt-config";
 import type { OrderLineItem } from "@/lib/types";
+import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,9 +114,9 @@ export async function GET(
 
 html, body {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 10pt;
-  font-weight: bold;
-  line-height: 1.5;
+  font-size: 9.5pt;
+  font-weight: normal; /* Changed from bold to normal for elegant layout */
+  line-height: 1.4;
   width: 74mm;
   max-width: 74mm;
   color: #000;
@@ -137,6 +138,17 @@ html, body {
   }
 }
 
+/* Logo styling */
+.logo-container {
+  text-align: center;
+  margin: 5px 0;
+}
+.logo-img {
+  width: 50mm;
+  max-width: 180px;
+  height: auto;
+}
+
 /* ── Header ── */
 .hborder { text-align:center; font-size:9pt; font-weight:bold; margin:1px 0; }
 .brand   { font-size:16pt; font-weight:bold; letter-spacing:3px; text-align:center; margin:3px 0 2px; }
@@ -154,7 +166,7 @@ html, body {
 }
 
 /* ── Meta ── */
-.meta { width:100%; font-size:9pt; font-weight:bold; border-collapse:collapse; margin:3px 0; }
+.meta { width:100%; font-size:9.5pt; font-weight:bold; border-collapse:collapse; margin:3px 0; }
 .meta td { padding:1.5px 0; vertical-align:top; }
 .meta .ml { width:55%; }
 .meta .mr { width:45%; text-align:right; }
@@ -231,6 +243,10 @@ html, body {
 </head>
 <body>
 
+<div class="logo-container">
+  <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
+</div>
+
 <p class="hborder">================================</p>
 <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
 ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
@@ -239,7 +255,7 @@ ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
 ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
 <p class="hborder">================================</p>
 
-${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order.token_number}</div>` : ""}
+${full.order.token_number != null ? `<div class="token-box" style="font-size: 16pt; font-weight: bold; letter-spacing: 2px; border-width: 3px; padding: 3px 4px;">TOKEN # ${full.order.token_number}</div>` : ""}
 
 <table class="meta">
   <tr>
