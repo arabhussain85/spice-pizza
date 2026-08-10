@@ -163,7 +163,7 @@ html, body {
   margin-bottom: 8px;
 }
 .brand   { font-size: 13pt; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
-.hsub    { font-size: 8pt; font-weight: 400; color: #333; line-height: 1.4; }
+.hsub    { font-size: 8pt; font-weight: 600; color: #000; line-height: 1.4; }
 
 /* ── Token ── */
 .token-box {
@@ -179,8 +179,8 @@ html, body {
 /* ── Meta ── */
 .meta { width: 100%; font-size: 8pt; border-collapse: collapse; margin: 6px 0; }
 .meta td { padding: 2px 0; vertical-align: top; }
-.meta .ml { width: 55%; color: #222; }
-.meta .mr { width: 45%; text-align: right; color: #222; }
+.meta .ml { width: 55%; color: #000; font-weight: 600; }
+.meta .mr { width: 45%; text-align: right; color: #000; font-weight: 600; }
 
 /* ── Separators ── */
 .sep-solid { border: none; border-top: 1px solid #000; margin: 6px 0; }
@@ -198,7 +198,7 @@ html, body {
 }
 .items thead th {
   font-size: 7.5pt;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   padding: 5px 0;
 }
@@ -207,25 +207,25 @@ html, body {
 .items thead th.c-qty  { text-align: center; }
 .items thead th.c-amt  { text-align: right; }
 
-.items tbody tr { border-bottom: 1px dashed #eee; }
+.items tbody tr { border-bottom: 1px dashed #000; }
 .items tbody td { padding: 5px 0; vertical-align: top; }
-.items tbody td.c-no   { font-size: 7.5pt; color: #555; text-align: left; }
-.items tbody td.c-name { padding-left: 3px; font-weight: 500; line-height: 1.35; }
-.items tbody td.c-qty  { text-align: center; font-weight: 500; }
-.items tbody td.c-amt  { text-align: right; white-space: nowrap; font-weight: 500; }
+.items tbody td.c-no   { font-size: 7.5pt; color: #000; text-align: left; font-weight: 600; }
+.items tbody td.c-name { padding-left: 3px; font-weight: 600; line-height: 1.35; }
+.items tbody td.c-qty  { text-align: center; font-weight: 600; }
+.items tbody td.c-amt  { text-align: right; white-space: nowrap; font-weight: 600; }
 
 .items tfoot tr { border-top: 1px solid #000; }
-.items tfoot td { padding: 6px 0; font-size: 8pt; font-weight: 600; }
+.items tfoot td { padding: 6px 0; font-size: 8.5pt; font-weight: 700; }
 .items tfoot td.c-qty { text-align: center; }
 
 /* modifier note */
-.mod { font-size: 7.5pt; font-weight: 400; color: #444; display: block; padding-left: 3px; margin-top: 1px; }
+.mod { font-size: 7.5pt; font-weight: 600; color: #000; display: block; padding-left: 3px; margin-top: 1px; }
 
 /* ── Totals ── */
 .totals { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 6px 0; }
 .totals td { padding: 2px 0; }
-.totals .lbl { color: #333; }
-.totals .val { text-align: right; white-space: nowrap; font-weight: 500; }
+.totals .lbl { color: #000; font-weight: 600; }
+.totals .val { text-align: right; white-space: nowrap; font-weight: 600; }
 
 /* ── Grand total ── */
 .grand {
@@ -242,14 +242,14 @@ html, body {
 /* ── Payment ── */
 .pay { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 4px 0; }
 .pay td { padding: 2px 0; }
-.pay .p-lbl { color: #333; }
-.pay .p-val { text-align: right; white-space: nowrap; font-weight: 500; }
+.pay .p-lbl { color: #000; font-weight: 600; }
+.pay .p-val { text-align: right; white-space: nowrap; font-weight: 600; }
 .pay .p-chg { text-align: right; font-size: 10pt; font-weight: 700; white-space: nowrap; }
 
 /* ── WiFi / Footer ── */
-.wifi   { font-size: 8pt; font-weight: 500; text-align: center; margin: 6px 0; }
-.footer { text-align: center; font-size: 8pt; line-height: 1.6; margin-top: 8px; color: #222; }
-.thanks { font-size: 9pt; font-weight: 600; letter-spacing: 0.5px; margin-top: 4px; }
+.wifi   { font-size: 8pt; font-weight: 700; text-align: center; margin: 6px 0; color: #000; }
+.footer { text-align: center; font-size: 8.5pt; line-height: 1.6; margin-top: 8px; color: #000; font-weight: 600; }
+.thanks { font-size: 9pt; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; }
 </style>
 </head>
 <body>

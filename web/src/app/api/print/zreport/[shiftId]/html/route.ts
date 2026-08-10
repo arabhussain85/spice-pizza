@@ -162,7 +162,7 @@ html, body {
 }
 
 .brand  { font-size:13pt; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:4px; }
-.sub    { font-size:8pt; font-weight:400; text-align:center; color:#333; line-height:1.4; }
+.sub    { font-size:8pt; font-weight:600; text-align:center; color:#000; line-height:1.4; }
 .sep    { border:none; border-top:1px solid #000; margin:6px 0; }
 .dash   { border:none; border-top:1px dashed #000; margin:6px 0; }
 
@@ -177,21 +177,22 @@ html, body {
   text-transform: uppercase;
 }
 
-.meta  { width:100%; border-collapse:collapse; font-size:8pt; margin:6px 0; }
+.meta  { width:100%; border-collapse:collapse; font-size:8pt; margin:6px 0; font-weight:600; color:#000; }
 .meta td { padding:2px 0; }
 .meta .mr { text-align:right; }
 
 .section-head {
   font-size: 8pt;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   margin: 8px 0 4px;
+  color: #000;
 }
 
 .tbl { width:100%; border-collapse:collapse; font-size:8.5pt; margin:4px 0; }
 .tbl td { padding:2px 0; }
-.tbl .lbl { color:#333; }
-.tbl .val { text-align:right; white-space:nowrap; font-weight:500; }
+.tbl .lbl { color:#000; font-weight:600; }
+.tbl .val { text-align:right; white-space:nowrap; font-weight:600; }
 
 .grand {
   width:100%;
@@ -204,11 +205,11 @@ html, body {
 .g-lbl { font-size:11pt; font-weight:700; }
 .g-val { font-size:13pt; font-weight:700; text-align:right; white-space:nowrap; }
 
-.counts { width:100%; border-collapse:collapse; font-size:8.5pt; }
+.counts { width:100%; border-collapse:collapse; font-size:8.5pt; font-weight:600; color:#000; }
 .counts td { padding:2px 0; }
-.counts .cr { text-align:right; font-weight:500; }
+.counts .cr { text-align:right; font-weight:600; }
 
-.footer { text-align:center; font-size:8pt; line-height:1.6; margin-top:8px; color:#222; }
+.footer { text-align:center; font-size:8.5pt; line-height:1.6; margin-top:8px; color:#000; font-weight:600; }
 </style>
 </head>
 <body>
