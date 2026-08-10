@@ -199,20 +199,20 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
 
   // ---- totals ----
   y -= 2; d.dashed(y); y -= 12;
-  d.left("Total Items", y, 9, font, MUTED); d.right(String(totalQty), y, 9, bold, INK); y -= 13;
-  d.left("Subtotal", y, 9, font, MUTED); d.right(slip.subtotal, y, 9, font, INK); y -= 13;
+  d.left("Total Items", y, 9, bold, INK); d.right(String(totalQty), y, 9, bold, INK); y -= 13;
+  d.left("Subtotal", y, 9, bold, INK); d.right(slip.subtotal, y, 9, bold, INK); y -= 13;
   if (slip.showService && slip.serviceValue) {
-    d.left(slip.serviceLabel ?? "Service Charge", y, 9, font, MUTED); d.right(slip.serviceValue, y, 9, font, INK); y -= 13;
+    d.left(slip.serviceLabel ?? "Service Charge", y, 9, font, INK); d.right(slip.serviceValue, y, 9, bold, INK); y -= 13;
   }
-  for (const l of slip.extraLines ?? []) { d.left(l.label, y, 9, font, MUTED); d.right(l.value, y, 9, font, INK); y -= 13; }
+  for (const l of slip.extraLines ?? []) { d.left(l.label, y, 9, font, INK); d.right(l.value, y, 9, bold, INK); y -= 13; }
   y -= 2; d.solid(y); y -= 20;
-  d.left("NET TOTAL", y, 12, bold, INK);
+  d.left("NET TOTAL", y, 13, bold, INK);
   d.right(slip.total, y, 18, bold, RED);
-  y -= 20;
+  y -= 22;
   if (slip.payment) {
     const payLabel = slip.payment.method.toLowerCase() === "cash" ? "Cash Tendered" : `Paid (${slip.payment.method})`;
-    d.left(payLabel, y, 8, font, MUTED); d.right(slip.payment.cash, y, 9, font, INK); y -= 12;
-    d.left("Change Due", y, 9, bold, INK); d.right(slip.payment.change, y, 10, bold, RED); y -= 13;
+    d.left(payLabel, y, 9, bold, INK); d.right(slip.payment.cash, y, 9, bold, INK); y -= 13;
+    d.left("Change Due", y, 10, bold, INK); d.right(slip.payment.change, y, 11, bold, RED); y -= 14;
   }
   d.dashed(y); y -= 12;
 
@@ -222,7 +222,7 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
     y -= 12; d.dashed(y); y -= 12;
   }
   if (slip.footer) { for (const ln of wrap(slip.footer, italic, 8, RIGHT - LEFT)) { d.center(ln, y, 8, italic, MUTED); y -= 10; } y -= 2; }
-  d.center("*** POWERED BY SPICE PIZZA ***", y, 7, font, MUTED);
+  d.center("** THANK YOU FOR VISITING! **", y, 8, bold, INK);
 
   return doc.save();
 }
@@ -386,8 +386,8 @@ export async function renderZReport(z: ZReport): Promise<Uint8Array> {
 
   // headline counts
   d.left("Orders Completed", y, 9, bold, INK); d.right(String(z.ordersClosed), y, 9, bold, INK); y -= 12;
-  d.left("Orders Cancelled", y, 9, font, MUTED); d.right(String(z.ordersVoid), y, 9, font, INK); y -= 12;
-  d.left("Items Sold", y, 9, font, MUTED); d.right(String(z.itemsSold), y, 9, font, INK); y -= 12;
+  d.left("Orders Cancelled", y, 9, font, INK); d.right(String(z.ordersVoid), y, 9, bold, INK); y -= 12;
+  d.left("Items Sold", y, 9, font, INK); d.right(String(z.itemsSold), y, 9, bold, INK); y -= 12;
   y -= 2; d.dashed(y); y -= 12;
 
   // sales breakdown
@@ -403,16 +403,16 @@ export async function renderZReport(z: ZReport): Promise<Uint8Array> {
   y -= 18; d.dashed(y); y -= 12;
 
   // payments received by method
-  d.left("PAYMENTS RECEIVED", y, 8, bold, MUTED); y -= 12;
+  d.left("PAYMENTS RECEIVED", y, 9, bold, INK); y -= 12;
   for (const p of z.payments) {
-    d.left(p.label, y, 9, font, MUTED); d.right(p.value, y, 9, font, INK); y -= 13;
+    d.left(p.label, y, 9, bold, INK); d.right(p.value, y, 10, bold, INK); y -= 13;
   }
 
   if (z.topItems && z.topItems.length) {
     y -= 2; d.dashed(y); y -= 12;
-    d.left("TOP ITEMS", y, 8, bold, MUTED); y -= 12;
+    d.left("TOP ITEMS", y, 9, bold, INK); y -= 12;
     for (const t of z.topItems) {
-      d.left(t.name, y, 9, font, INK); d.right(`x${t.qty}`, y, 9, bold, INK); y -= 12;
+      d.left(t.name, y, 9, bold, INK); d.right(`x${t.qty}`, y, 9, bold, INK); y -= 12;
     }
   }
 

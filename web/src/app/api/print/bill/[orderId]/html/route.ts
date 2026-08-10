@@ -389,10 +389,11 @@ ${wifiBlock}
 <!-- ══ AUTO PRINT ══ -->
 <script>
   window.addEventListener('load', function () {
-    setTimeout(function () {
-      window.print();
-      setTimeout(function () { window.close(); }, 600);
-    }, 350);
+    // afterprint fires after the dialog is dismissed (print or cancel).
+    window.addEventListener('afterprint', function () {
+      setTimeout(function () { window.close(); }, 200);
+    });
+    setTimeout(function () { window.print(); }, 400);
   });
 </script>
 </body>
