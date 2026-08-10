@@ -93,14 +93,21 @@ export async function GET(
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
-body {
+html, body {
   font-family: 'Courier New', Courier, monospace;
   font-size: 11pt;
   font-weight: bold;
   line-height: 1.5;
   width: 74mm;
+  max-width: 74mm;
   color: #000;
   background: #fff;
+  overflow: hidden;
+}
+
+@media print {
+  html, body { overflow: hidden; width: 74mm; max-width: 74mm; }
+  .footer { page-break-after: avoid; }
 }
 
 @media screen {
