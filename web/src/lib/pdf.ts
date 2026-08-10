@@ -54,12 +54,13 @@ function drawing(page: PDFPage): Draw {
   return {
     page,
     at,
-    left: (s, y, size, f, c) => at(s, LEFT, y, size, f, c),
-    right: (s, y, size, f, c) => at(s, RIGHT - f.widthOfTextAtSize(s, size), y, size, f, c),
+    left:   (s, y, size, f, c) => at(s, LEFT, y, size, f, c),
+    right:  (s, y, size, f, c) => at(s, RIGHT - f.widthOfTextAtSize(s, size), y, size, f, c),
     center: (s, y, size, f, c) => at(s, (W - f.widthOfTextAtSize(s, size)) / 2, y, size, f, c),
     dashed: (y) =>
-      page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 0.8, color: RULE, dashArray: [2, 2] }),
-    solid: (y) => page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 1.2, color: INK }),
+      page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 2, color: INK, dashArray: [3, 2] }),
+    solid:  (y) =>
+      page.drawLine({ start: { x: LEFT, y }, end: { x: RIGHT, y }, thickness: 2, color: INK }),
   };
 }
 
@@ -136,30 +137,30 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
   drawLogo(page, logo, W / 2, y, logoW, logoH);
   y -= logoH + 8;
   d.center(slip.brand.toUpperCase(), y, 15, bold, INK); y -= 13;
-  if (slip.tagline) { d.center(slip.tagline, y, 8, italic, MUTED); y -= 11; }
-  if (slip.address) { for (const ln of wrap(slip.address, font, 8, RIGHT - LEFT)) { d.center(ln, y, 8, font, INK); y -= 10; } }
-  if (slip.phone) { d.center(`Tel: ${slip.phone}`, y, 8, bold, INK); y -= 11; }
-  if (slip.ntn) { d.center(slip.ntn, y, 7.5, font, MUTED); y -= 11; }
-  y -= 2; d.dashed(y); y -= 12;
+  if (slip.tagline) { d.center(slip.tagline, y, 9, italic, INK); y -= 11; }
+  if (slip.address) { for (const ln of wrap(slip.address, font, 9, RIGHT - LEFT)) { d.center(ln, y, 9, font, INK); y -= 11; } }
+  if (slip.phone) { d.center(`Tel: ${slip.phone}`, y, 9, bold, INK); y -= 12; }
+  if (slip.ntn) { d.center(slip.ntn, y, 8.5, bold, INK); y -= 12; }
+  y -= 2; d.dashed(y); y -= 13;
 
   // ---- meta ----
   d.left(`ORDER #${slip.orderNumber}`, y, 9, bold, INK);
   if (slip.token != null) d.right(`TOKEN #${slip.token}`, y, 11, bold, RED);
   y -= 12;
-  d.left(slip.table, y, 8, bold, INK);
-  d.right(slip.date, y, 8, font, MUTED);
-  y -= 11;
-  if (slip.staff) d.left(`Staff: ${slip.staff}`, y, 8, font, MUTED);
-  d.right(`Time: ${slip.time}`, y, 8, font, MUTED);
-  y -= 11;
+  d.left(slip.table, y, 9, bold, INK);
+  d.right(slip.date, y, 9, bold, INK);
+  y -= 12;
+  if (slip.staff) d.left(`Staff: ${slip.staff}`, y, 9, bold, INK);
+  d.right(`Time: ${slip.time}`, y, 9, bold, INK);
+  y -= 12;
   if (slip.customer) {
-    if (slip.customer.name) { d.left(`Customer: ${slip.customer.name}`, y, 8, font, INK); y -= 11; }
-    if (slip.customer.phone) { d.left(`Phone: ${slip.customer.phone}`, y, 8, font, INK); y -= 11; }
+    if (slip.customer.name)    { d.left(`Customer: ${slip.customer.name}`,  y, 9, bold, INK); y -= 12; }
+    if (slip.customer.phone)   { d.left(`Phone: ${slip.customer.phone}`,    y, 9, bold, INK); y -= 12; }
     if (slip.customer.address) {
-      for (const ln of wrap(`Address: ${slip.customer.address}`, font, 8, RIGHT - LEFT)) { d.left(ln, y, 8, font, INK); y -= 10; }
+      for (const ln of wrap(`Address: ${slip.customer.address}`, font, 9, RIGHT - LEFT)) { d.left(ln, y, 9, bold, INK); y -= 11; }
     }
   }
-  d.dashed(y); y -= 12;
+  d.dashed(y); y -= 13;
 
   // ---- items: #  ITEM  QTY  PRICE (ruled columns) ----
   const ITEM_X = LEFT + 15;
@@ -181,20 +182,20 @@ export async function renderBill(slip: BillSlip): Promise<Uint8Array> {
     const lines = wrap(it.name, bold, 9, ITEM_MAX);
     lines.forEach((ln, i) => {
       if (i === 0) {
-        d.at(`${sr}`, LEFT, y, 9, font, MUTED);
-        d.at(String(it.qty), QTY_X + 6, y, 9, font, INK);
-        d.right(it.amount, y, 9, font, INK);
+        d.at(`${sr}`, LEFT, y, 9, bold, INK);
+        d.at(String(it.qty), QTY_X + 4, y, 10, bold, INK);
+        d.right(it.amount, y, 9, bold, INK);
       }
       d.at(ln, ITEM_X, y, 9, bold, INK);
-      y -= 12;
+      y -= 13;
     });
-    if (slip.showItemNotes && it.sub) { d.at(`» ${it.sub}`, ITEM_X, y, 7.5, font, MUTED); y -= 10; }
+    if (slip.showItemNotes && it.sub) { d.at(`* ${it.sub}`, ITEM_X, y, 8.5, bold, INK); y -= 11; }
     y -= 4;
   }
   // vertical column rules spanning the item table
   const tableBottom = y + 8;
   for (const vx of [COL1, COL2]) {
-    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 0.6, color: RULE });
+    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 1, color: INK });
   }
 
   // ---- totals ----
@@ -308,7 +309,7 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
   // vertical column rules spanning the item table
   const tableBottom = y + 8;
   for (const vx of [COL1, COL2]) {
-    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 0.6, color: RULE });
+    page.drawLine({ start: { x: vx, y: tableBottom }, end: { x: vx, y: tableTop }, thickness: 1, color: INK });
   }
 
   if (slip.total) {
