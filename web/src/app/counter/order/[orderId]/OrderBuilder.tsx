@@ -151,7 +151,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
   const currentRound = useMemo(() => [...rounds].reverse().find((r) => !r.sent_to_kitchen_at) ?? null, [rounds]);
   const currentItems: OrderLineItem[] = currentRound?.order_line_items?.filter((li) => !li.is_voided) ?? [];
   const allLines = rounds.flatMap((r) => r.order_line_items);
-  const totals = billTotals(allLines, order?.order.service_charge_pct ?? 5);
+  const totals = billTotals(allLines, order?.order.service_charge_pct ?? 5, null, order?.order.delivery_charge ?? 0);
   const roundSubtotal = sumLines(currentItems);
   const roundNumber = currentRound?.round_number ?? (rounds.at(-1)?.round_number ?? 1);
   const totalItems = allLines.filter((li) => !li.is_voided).reduce((a, li) => a + li.quantity, 0);
@@ -376,7 +376,12 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
           <div className="p-4 border-t border-[#e4beba] bg-white/60 space-y-1.5">
             <div className="flex justify-between text-sm text-[#605e5b]"><span>Subtotal</span><span className="tabular-nums">{formatRs(totals.subtotal)}</span></div>
-            <div className="flex justify-between text-sm text-[#605e5b]"><span>Service charge ({order?.order.service_charge_pct ?? 5}%)</span><span className="tabular-nums">{formatRs(totals.service)}</span></div>
+            {otype === "dine_in" && (
+              <div className="flex justify-between text-sm text-[#605e5b]"><span>Service charge ({order?.order.service_charge_pct ?? 5}%)</span><span className="tabular-nums">{formatRs(totals.service)}</span></div>
+            )}
+            {otype === "delivery" && (
+              <div className="flex justify-between text-sm text-[#605e5b]"><span>Delivery Charge</span><span className="tabular-nums">{totals.delivery > 0 ? formatRs(totals.delivery) : "FREE"}</span></div>
+            )}
             <div className="flex items-center justify-between pt-1">
               <span className="font-bold text-[#1A1A1A]">Total</span>
               <span className="text-2xl font-bold text-[#af101a]" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>{formatRs(totals.total)}</span>
@@ -441,6 +446,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
             name: order.order.customer_name,
             phone: order.order.customer_phone,
             address: order.order.customer_address,
+            deliveryCharge: order.order.delivery_charge,
           }}
         />
       )}

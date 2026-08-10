@@ -143,6 +143,12 @@ export function OffTableOrders() {
                   </div>
                 )}
 
+                {o.order_type === "delivery" && (
+                  <div className="mt-1 text-[11px] font-bold text-[#af101a]">
+                    {o.delivery_charge > 0 ? `Delivery: ${formatRs(o.delivery_charge)}` : "Free Delivery"}
+                  </div>
+                )}
+
                 <div className="mt-3 flex items-center justify-between border-t border-[#f0e4e2] pt-2">
                   <span className="text-xs text-[#605e5b]">{o.rounds} round{o.rounds === 1 ? "" : "s"}</span>
                   <span className="text-sm font-bold text-[#af101a]" style={{ fontFamily: "'Hanken Grotesk', sans-serif" }}>

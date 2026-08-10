@@ -82,6 +82,7 @@ export interface Order {
   server_name: string | null;
   status: OrderStatus;
   service_charge_pct: number;
+  delivery_charge: number;
   token_number: number | null;
   type_number: number | null;
   shift_id: string | null;

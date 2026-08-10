@@ -98,6 +98,7 @@ export interface CustomerInfo {
   name?: string;
   phone?: string;
   address?: string;
+  deliveryCharge?: number;
 }
 
 /** Start a takeaway or delivery order (no table, all customer fields optional). */
@@ -124,6 +125,7 @@ async function startOffTable(
       server_name: staff.name,
       server_id: staff.id,
       service_charge_pct: 0,
+      delivery_charge: type === "delivery" ? Math.max(0, customer.deliveryCharge ?? 0) : 0,
       shift_id: shiftId,
       token_number: token,
       type_number: typeNumber,
@@ -144,13 +146,17 @@ export async function updateOrderCustomer(
   customer: CustomerInfo,
 ): Promise<{ ok: true }> {
   const supa = createAdminClient();
+  const updateData: Record<string, unknown> = {
+    customer_name: customer.name?.trim() || null,
+    customer_phone: customer.phone?.trim() || null,
+    customer_address: customer.address?.trim() || null,
+  };
+  if (customer.deliveryCharge !== undefined) {
+    updateData.delivery_charge = Math.max(0, customer.deliveryCharge);
+  }
   const { error } = await supa
     .from("orders")
-    .update({
-      customer_name: customer.name?.trim() || null,
-      customer_phone: customer.phone?.trim() || null,
-      customer_address: customer.address?.trim() || null,
-    })
+    .update(updateData)
     .eq("id", orderId);
   if (error) throw new Error(error.message);
   return { ok: true };

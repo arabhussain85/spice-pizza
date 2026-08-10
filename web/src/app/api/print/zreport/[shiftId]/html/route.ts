@@ -34,13 +34,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 
   const { data: ordersRaw } = await supa
     .from("orders")
-    .select("id, status, service_charge_pct, order_rounds(order_line_items(*)), discounts(type, value)")
+    .select("id, status, service_charge_pct, delivery_charge, order_rounds(order_line_items(*)), discounts(type, value)")
     .eq("shift_id", shiftId);
 
   const orders = (ordersRaw ?? []) as Array<{
     id: string;
     status: string;
     service_charge_pct: number;
+    delivery_charge: number;
     order_rounds: { order_line_items: OrderLineItem[] }[];
     discounts: { type: "percent" | "fixed"; value: number }[] | null;
   }>;
@@ -49,7 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
   const promos = await fetchActivePromotions(supa);
   const menuMeta = await fetchMenuMeta(supa);
 
-  let subTotal = 0, serviceTotal = 0, manualDisc = 0, promoDisc = 0;
+  let subTotal = 0, serviceTotal = 0, deliveryTotal = 0, manualDisc = 0, promoDisc = 0;
   let netSales = 0, itemsSold = 0, ordersClosed = 0, ordersVoid = 0;
   const itemTally = new Map<string, number>();
 
@@ -60,14 +61,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
     const allLines = (o.order_rounds ?? []).flatMap((r) => r.order_line_items ?? []);
     const live = allLines.filter((li) => !li.is_voided);
     const disc = Array.isArray(o.discounts) ? o.discounts[0] : null;
-    const totals = billTotals(allLines, o.service_charge_pct, disc ? { type: disc.type, value: disc.value } : null);
+    const totals = billTotals(allLines, o.service_charge_pct, disc ? { type: disc.type, value: disc.value } : null, o.delivery_charge ?? 0);
     const promo = promoTotals(live, promos, menuMeta);
     const svc = cfg.showService ? totals.service : 0;
     subTotal += totals.subtotal;
     serviceTotal += svc;
+    deliveryTotal += totals.delivery;
     manualDisc += totals.discount;
     promoDisc += promo.discount;
-    netSales += Math.max(0, totals.subtotal + svc - promo.discount - totals.discount);
+    netSales += Math.max(0, totals.subtotal + svc + totals.delivery - promo.discount - totals.discount);
     for (const li of live) {
       itemsSold += li.quantity;
       itemTally.set(li.name_snapshot, (itemTally.get(li.name_snapshot) ?? 0) + li.quantity);
@@ -95,7 +97,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 
   const salesRows = [
     `<tr><td class="lbl">Gross Subtotal</td><td class="val">${e(formatRs(subTotal))}</td></tr>`,
-    serviceTotal > 0 ? `<tr><td class="lbl">Service Charge</td><td class="val">${e(formatRs(serviceTotal))}</td></tr>` : "",
+    serviceTotal > 0  ? `<tr><td class="lbl">Service Charge</td><td class="val">${e(formatRs(serviceTotal))}</td></tr>` : "",
+    deliveryTotal > 0 ? `<tr><td class="lbl">Delivery Charges</td><td class="val">${e(formatRs(deliveryTotal))}</td></tr>` : "",
     promoDisc > 0    ? `<tr><td class="lbl">Promotions</td><td class="val">- ${e(formatRs(promoDisc))}</td></tr>` : "",
     manualDisc > 0   ? `<tr><td class="lbl">Discounts</td><td class="val">- ${e(formatRs(manualDisc))}</td></tr>` : "",
   ].filter(Boolean).join("");

@@ -29,13 +29,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 
   const { data: ordersRaw } = await supa
     .from("orders")
-    .select("id, status, service_charge_pct, order_rounds(order_line_items(*)), discounts(type, value)")
+    .select("id, status, service_charge_pct, delivery_charge, order_rounds(order_line_items(*)), discounts(type, value)")
     .eq("shift_id", shiftId);
 
   const orders = (ordersRaw ?? []) as Array<{
     id: string;
     status: string;
     service_charge_pct: number;
+    delivery_charge: number;
     order_rounds: { order_line_items: OrderLineItem[] }[];
     discounts: { type: "percent" | "fixed"; value: number }[] | null;
   }>;
@@ -46,6 +47,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 
   let subTotal = 0;
   let serviceTotal = 0;
+  let deliveryTotal = 0;
   let manualDisc = 0;
   let promoDisc = 0;
   let netSales = 0;
@@ -65,15 +67,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
     const allLines = (o.order_rounds ?? []).flatMap((r) => r.order_line_items ?? []);
     const live = allLines.filter((li) => !li.is_voided);
     const disc = Array.isArray(o.discounts) ? o.discounts[0] : null;
-    const totals = billTotals(allLines, o.service_charge_pct, disc ? { type: disc.type, value: disc.value } : null);
+    const totals = billTotals(allLines, o.service_charge_pct, disc ? { type: disc.type, value: disc.value } : null, o.delivery_charge ?? 0);
     const promo = promoTotals(live, promos, menuMeta);
     const svc = cfg.showService ? totals.service : 0;
 
     subTotal += totals.subtotal;
     serviceTotal += svc;
+    deliveryTotal += totals.delivery;
     manualDisc += totals.discount;
     promoDisc += promo.discount;
-    netSales += Math.max(0, totals.subtotal + svc - promo.discount - totals.discount);
+    netSales += Math.max(0, totals.subtotal + svc + totals.delivery - promo.discount - totals.discount);
 
     for (const li of live) {
       itemsSold += li.quantity;
@@ -104,6 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
   const sales: ZReport["sales"] = [
     { label: "Gross Subtotal", value: formatRs(subTotal) },
     ...(serviceTotal > 0 ? [{ label: "Service Charge", value: formatRs(serviceTotal) }] : []),
+    ...(deliveryTotal > 0 ? [{ label: "Delivery Charges", value: formatRs(deliveryTotal) }] : []),
     ...(promoDisc > 0 ? [{ label: "Promotions", value: `- ${formatRs(promoDisc)}` }] : []),
     ...(manualDisc > 0 ? [{ label: "Discounts", value: `- ${formatRs(manualDisc)}` }] : []),
   ];

@@ -37,11 +37,12 @@ export async function GET(
   const totals   = billTotals(
     allLines,
     full.order.service_charge_pct,
-    full.discount ? { type: full.discount.type, value: full.discount.value } : null
+    full.discount ? { type: full.discount.type, value: full.discount.value } : null,
+    full.order.delivery_charge ?? 0
   );
   const promo      = promoTotals(live, promos, menuMeta);
   const serviceAmt = cfg.showService ? totals.service : 0;
-  const netTotal   = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
+  const netTotal   = Math.max(0, totals.subtotal + serviceAmt + totals.delivery - promo.discount - totals.discount);
   const cashPay    = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
 
   const ot = full.order.order_type;
@@ -80,6 +81,9 @@ export async function GET(
     `<tr><td class="lbl">Subtotal</td><td class="val">${e(formatRs(totals.subtotal))}</td></tr>`,
     cfg.showService && totals.service > 0
       ? `<tr><td class="lbl">Service (${full.order.service_charge_pct}%)</td><td class="val">${e(formatRs(totals.service))}</td></tr>`
+      : "",
+    ot === "delivery"
+      ? `<tr><td class="lbl">Delivery Charge</td><td class="val">${totals.delivery > 0 ? e(formatRs(totals.delivery)) : "FREE"}</td></tr>`
       : "",
     promo.discount > 0
       ? `<tr><td class="lbl">Promo${promo.names.length ? " - " + promo.names.join(", ") : ""}</td><td class="val">- ${e(formatRs(promo.discount))}</td></tr>`

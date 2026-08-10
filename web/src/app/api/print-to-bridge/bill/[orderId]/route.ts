@@ -57,12 +57,13 @@ export async function POST(
   const totals = billTotals(
     allLines,
     full.order.service_charge_pct,
-    full.discount ? { type: full.discount.type, value: full.discount.value } : null
+    full.discount ? { type: full.discount.type, value: full.discount.value } : null,
+    full.order.delivery_charge ?? 0
   );
   const promo = promoTotals(live, promos, menuMeta);
 
   const serviceAmt = cfg.showService ? totals.service : 0;
-  const netTotal = Math.max(0, totals.subtotal + serviceAmt - promo.discount - totals.discount);
+  const netTotal = Math.max(0, totals.subtotal + serviceAmt + totals.delivery - promo.discount - totals.discount);
 
   const cashPay = (paysRes.data ?? [])[0] as { method: string; tendered: number } | undefined;
 
@@ -102,6 +103,7 @@ export async function POST(
     serviceValue: formatRs(totals.service),
     showService: cfg.showService && totals.service > 0,
     extraLines: [
+      ...(ot === "delivery" ? [{ label: "Delivery Charge", value: totals.delivery > 0 ? formatRs(totals.delivery) : "FREE" }] : []),
       ...(promo.discount > 0 ? [{ label: `Promo${promo.names.length ? " · " + promo.names.join(", ") : ""}`, value: `- ${formatRs(promo.discount)}` }] : []),
       ...(totals.discount > 0 ? [{ label: "Discount", value: `- ${formatRs(totals.discount)}` }] : []),
     ],

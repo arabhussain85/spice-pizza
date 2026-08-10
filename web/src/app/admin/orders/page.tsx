@@ -114,7 +114,7 @@ function OrderDetailModal({ full, onClose, reload, onDelete }: { full: OrderFull
   const { confirm } = useConfirm();
   const [busy, setBusy] = useState(false);
   const allLines = full.rounds.flatMap((r) => r.order_line_items);
-  const totals = billTotals(allLines, full.order.service_charge_pct, full.discount ? { type: full.discount.type, value: full.discount.value } : null);
+  const totals = billTotals(allLines, full.order.service_charge_pct, full.discount ? { type: full.discount.type, value: full.discount.value } : null, full.order.delivery_charge ?? 0);
 
   const withBusy = (fn: () => Promise<unknown>) => async () => { setBusy(true); try { await fn(); await reload(); } finally { setBusy(false); } };
 

@@ -15,20 +15,21 @@ interface ClosedOrderRow {
   closed_at: string | null;
   status: string;
   service_charge_pct: number;
+  delivery_charge: number;
   restaurant_tables: { number: number } | null;
   order_rounds: { order_line_items: { name_snapshot: string; quantity: number; unit_price: number; is_voided: boolean }[] }[];
   discounts: { type: "percent" | "fixed"; value: number }[];
 }
 
 const ORDER_SELECT =
-  "id,order_number,opened_at,closed_at,status,service_charge_pct,restaurant_tables(number),order_rounds(order_line_items(name_snapshot,quantity,unit_price,is_voided)),discounts(type,value)";
+  "id,order_number,opened_at,closed_at,status,service_charge_pct,delivery_charge,restaurant_tables(number),order_rounds(order_line_items(name_snapshot,quantity,unit_price,is_voided)),discounts(type,value)";
 
 function orderLines(o: ClosedOrderRow) {
   return o.order_rounds.flatMap((r) => r.order_line_items);
 }
 function orderTotal(o: ClosedOrderRow): number {
   const d = o.discounts?.[0];
-  return billTotals(orderLines(o), o.service_charge_pct, d ? { type: d.type, value: d.value } : null).total;
+  return billTotals(orderLines(o), o.service_charge_pct, d ? { type: d.type, value: d.value } : null, o.delivery_charge ?? 0).total;
 }
 function orderItemCount(o: ClosedOrderRow): number {
   return orderLines(o).filter((li) => !li.is_voided).reduce((a, li) => a + li.quantity, 0);

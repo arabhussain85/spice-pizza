@@ -14,20 +14,28 @@ export function CustomerCorner({
 }: {
   orderId: string;
   type: "takeaway" | "delivery";
-  initial: { name?: string | null; phone?: string | null; address?: string | null };
+  initial: { name?: string | null; phone?: string | null; address?: string | null; deliveryCharge?: number | null };
 }) {
   const isDelivery = type === "delivery";
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(initial.name ?? "");
   const [phone, setPhone] = useState(initial.phone ?? "");
   const [address, setAddress] = useState(initial.address ?? "");
+  const [deliveryCharge, setDeliveryCharge] = useState<string>(
+    initial.deliveryCharge != null ? String(initial.deliveryCharge) : "0",
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   async function save() {
     setSaving(true);
     try {
-      await updateOrderCustomer(orderId, { name, phone, address: isDelivery ? address : undefined });
+      await updateOrderCustomer(orderId, {
+        name,
+        phone,
+        address: isDelivery ? address : undefined,
+        deliveryCharge: isDelivery ? Math.max(0, Number(deliveryCharge) || 0) : 0,
+      });
       setSaved(true);
       setOpen(false);
     } finally {
@@ -74,13 +82,44 @@ export function CustomerCorner({
         className="mb-2 w-full rounded-lg border border-[#e4beba] bg-[#fff0ef] px-3 py-2 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]"
       />
       {isDelivery && (
-        <textarea
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          rows={2}
-          placeholder="Delivery address"
-          className="mb-2 w-full resize-none rounded-lg border border-[#e4beba] bg-[#fff0ef] px-3 py-2 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]"
-        />
+        <>
+          <textarea
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            rows={2}
+            placeholder="Delivery address"
+            className="mb-2 w-full resize-none rounded-lg border border-[#e4beba] bg-[#fff0ef] px-3 py-2 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]"
+          />
+          <div className="mb-2">
+            <label className="mb-1 block text-xs font-semibold text-[#1A1A1A]">
+              Delivery Charge (Rs.)
+            </label>
+            <div className="mb-1.5 flex flex-wrap gap-1">
+              {[0, 50, 100, 150, 200].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => setDeliveryCharge(String(amt))}
+                  className={`rounded-md px-2 py-0.5 text-[11px] font-bold border transition-colors ${
+                    Number(deliveryCharge) === amt
+                      ? "border-[#af101a] bg-[#af101a] text-white"
+                      : "border-[#e4beba] bg-[#fff0ef] text-[#605e5b] hover:border-[#af101a]/40"
+                  }`}
+                >
+                  {amt === 0 ? "Free" : `Rs ${amt}`}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value)}
+              placeholder="Delivery Charge Rs."
+              className="w-full rounded-lg border border-[#e4beba] bg-[#fff0ef] px-3 py-1.5 text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]"
+            />
+          </div>
+        </>
       )}
       <button
         onClick={save}

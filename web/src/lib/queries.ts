@@ -82,6 +82,7 @@ export interface OffTableOrder {
   type_number: number | null;
   customer_name: string | null;
   customer_phone: string | null;
+  delivery_charge: number;
   opened_at: string;
   rounds: number;
   runningTotal: number;
@@ -92,7 +93,7 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
   const { data, error } = await supa
     .from("orders")
     .select(
-      "id,order_number,order_type,token_number,type_number,customer_name,customer_phone,opened_at,order_rounds(id,order_line_items(quantity,unit_price,name_snapshot,size_snapshot,is_voided))",
+      "id,order_number,order_type,token_number,type_number,customer_name,customer_phone,delivery_charge,opened_at,order_rounds(id,order_line_items(quantity,unit_price,name_snapshot,size_snapshot,is_voided))",
     )
     .eq("status", "open")
     .in("order_type", ["takeaway", "delivery"])
@@ -107,6 +108,7 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
     type_number: number | null;
     customer_name: string | null;
     customer_phone: string | null;
+    delivery_charge: number;
     opened_at: string;
     order_rounds: { id: string; order_line_items: OrderLineItem[] }[];
   }>;
@@ -114,6 +116,8 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
   return orders.map((o) => {
     const rounds = o.order_rounds ?? [];
     const lines = rounds.flatMap((r) => r.order_line_items ?? []).filter((li) => !li.is_voided);
+    const sub = sumLines(lines);
+    const del = Number(o.delivery_charge ?? 0);
     return {
       id: o.id,
       order_number: o.order_number,
@@ -122,9 +126,10 @@ export async function fetchOffTableOrders(supa: SupabaseClient): Promise<OffTabl
       type_number: o.type_number,
       customer_name: o.customer_name,
       customer_phone: o.customer_phone,
+      delivery_charge: del,
       opened_at: o.opened_at,
       rounds: rounds.length,
-      runningTotal: sumLines(lines),
+      runningTotal: sub + del,
       items: lines.map((li) => ({
         qty: li.quantity,
         name: `${li.name_snapshot}${li.size_snapshot ? ` (${li.size_snapshot})` : ""}`,

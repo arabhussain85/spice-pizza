@@ -163,6 +163,7 @@ export function BillView({ orderId }: { orderId: string }) {
     allLines,
     o.service_charge_pct,
     discount ? { type: discount.type, value: discount.value } : null,
+    o.delivery_charge ?? 0,
   );
   const promoRes = promoTotals(allLines, promos, meta);
   const finalTotal = Math.max(0, totals.total - promoRes.discount);
@@ -305,10 +306,18 @@ export function BillView({ orderId }: { orderId: string }) {
               <span>Subtotal</span>
               <span>{formatRs(totals.subtotal)}</span>
             </div>
-            <div className="flex justify-between text-[#605e5b]">
-              <span>Service charge ({o.service_charge_pct}%)</span>
-              <span>{formatRs(totals.service)}</span>
-            </div>
+            {o.service_charge_pct > 0 && totals.service > 0 && (
+              <div className="flex justify-between text-[#605e5b]">
+                <span>Service charge ({o.service_charge_pct}%)</span>
+                <span>{formatRs(totals.service)}</span>
+              </div>
+            )}
+            {o.order_type === "delivery" && (
+              <div className="flex justify-between text-[#605e5b]">
+                <span>Delivery Charge</span>
+                <span>{totals.delivery > 0 ? formatRs(totals.delivery) : "FREE"}</span>
+              </div>
+            )}
             {promoRes.discount > 0 && (
               <div className="flex justify-between text-[#2E7D32]">
                 <span>Promo{promoRes.names.length ? ` · ${promoRes.names.join(", ")}` : ""}</span>

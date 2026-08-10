@@ -67,4 +67,14 @@ test("billTotals applies discount after service", () => {
   assert.equal(t.total, 950);
 });
 
+test("billTotals incorporates delivery charges", () => {
+  const lines = [{ quantity: 1, unit_price: 1000 }];
+  const t = billTotals(lines, 0, null, 150);
+  assert.equal(t.subtotal, 1000);
+  assert.equal(t.service, 0);
+  assert.equal(t.delivery, 150);
+  assert.equal(t.discount, 0);
+  assert.equal(t.total, 1150);
+});
+
 console.log(`\n${passed} passing`);

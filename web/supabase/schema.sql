@@ -102,6 +102,7 @@ create table if not exists orders (
   server_name        text,
   status             text not null default 'open' check (status in ('open','closed','void')),
   service_charge_pct numeric(5,2) not null default 5,
+  delivery_charge    numeric(10,2) not null default 0,
   opened_at          timestamptz not null default now(),
   closed_at          timestamptz,
   created_at         timestamptz not null default now()

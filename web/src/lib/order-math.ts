@@ -16,6 +16,7 @@ export interface DiscountLike {
 export interface BillTotals {
   subtotal: number;
   service: number;
+  delivery: number;
   discount: number;
   total: number;
 }
@@ -47,10 +48,12 @@ export function billTotals(
   lines: LineLike[],
   serviceChargePct: number,
   discount?: DiscountLike | null,
+  deliveryCharge: number = 0,
 ): BillTotals {
   const subtotal = sumLines(lines);
   const service = serviceCharge(subtotal, serviceChargePct);
+  const delivery = Math.max(0, deliveryCharge);
   const discount_ = discountAmount(subtotal, discount);
-  const total = Math.max(0, subtotal + service - discount_);
-  return { subtotal, service, discount: discount_, total };
+  const total = Math.max(0, subtotal + service + delivery - discount_);
+  return { subtotal, service, delivery, discount: discount_, total };
 }
