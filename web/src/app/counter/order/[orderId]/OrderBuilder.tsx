@@ -229,7 +229,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
   const custName = order?.order.customer_name ?? null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FCF9F5]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="h-screen flex flex-col bg-[#FCF9F5] overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* ── Top Header ──────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-20 h-14 flex items-center justify-between px-4 md:px-8 bg-[#fff8f7] border-b border-[#e4beba] shadow-sm">
         <div className="flex items-center gap-3">
@@ -289,12 +289,12 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
       </header>
 
       {/* ── Main: Menu + Receipt ────────────────────────────── */}
-      <div className="flex flex-1 pt-14 overflow-hidden" style={{ height: "100vh" }}>
+      <div className="flex flex-1 pt-14 overflow-hidden">
         {/* Menu Panel (Split layout: Categories Sidebar on left, Products Grid on right) */}
         <div className="flex-1 flex overflow-hidden">
           {/* Categories Sidebar */}
           {!search && (
-            <div className="w-32 md:w-44 shrink-0 border-r border-[#e4beba] bg-white/40 p-3 md:p-4 overflow-y-auto flex flex-col gap-2">
+            <div className="w-32 md:w-44 shrink-0 border-r border-[#e4beba] bg-white/40 p-3 md:p-4 overflow-y-auto overscroll-contain flex flex-col gap-2 no-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f6c] mb-1 px-1">Categories</div>
               {menu.filter((c) => c.products.length && c.category.name !== "Add-ons").map((c) => (
                 <button
@@ -314,7 +314,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           )}
 
           {/* Products Column */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-6" style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="sm:hidden relative mb-4">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#8f6f6c]" style={{ fontSize: "16px" }}>search</span>
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search menu…" className="pl-9 pr-4 py-2.5 w-full rounded-xl border border-[#e4beba] bg-white text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]" />
