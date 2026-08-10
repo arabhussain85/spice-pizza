@@ -192,25 +192,20 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
   const removeItem = useCallback(async (id: string) => { await deleteLineItem(id); await refetchOrder(); }, [refetchOrder]);
 
   async function handleSend() {
-    // Open BOTH print windows synchronously inside the click handler so
-    // popup blockers allow them. We fill the URLs after the async call.
-    const kitchenWin = window.open("about:blank", "_blank");
-    const billWin    = window.open("about:blank", "_blank");
+    // Open a single print window synchronously inside the click handler to avoid popup blocking.
+    const printWin = window.open("about:blank", "_blank");
 
     setSending(true);
     setBanner(null);
     try {
       const res = await sendToKitchen(orderId);
       if (!res.ok) {
-        kitchenWin?.close();
-        billWin?.close();
+        printWin?.close();
         setBanner(res.error);
         return;
       }
-      // 1️⃣ Kitchen copy — only this round's items
-      if (kitchenWin) kitchenWin.location.href = `/api/print/round/${res.roundId}/html`;
-      // 2️⃣ Counter / customer copy — full bill so far
-      if (billWin) billWin.location.href = `/api/print/bill/${orderId}/html`;
+      // Redirect to the combined HTML route that prints BOTH slips in one go.
+      if (printWin) printWin.location.href = `/api/print/round/${res.roundId}/html`;
 
       await refetchOrder();
       setCartOpen(false);
