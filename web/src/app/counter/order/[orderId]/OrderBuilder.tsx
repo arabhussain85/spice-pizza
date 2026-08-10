@@ -290,22 +290,21 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
       {/* ── Main: Menu + Receipt ────────────────────────────── */}
       <div className="flex flex-1 pt-14 overflow-hidden" style={{ height: "100vh" }}>
-        {/* Menu Panel */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="sm:hidden relative mb-3">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#8f6f6c]" style={{ fontSize: "16px" }}>search</span>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search menu…" className="pl-9 pr-4 py-2.5 w-full rounded-xl border border-[#e4beba] bg-white text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]" />
-          </div>
-
+        {/* Menu Panel (Split layout: Categories Sidebar on left, Products Grid on right) */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Categories Sidebar */}
           {!search && (
-            <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
+            <div className="w-32 md:w-44 shrink-0 border-r border-[#e4beba] bg-white/40 p-3 md:p-4 overflow-y-auto flex flex-col gap-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#8f6f6c] mb-1 px-1">Categories</div>
               {menu.filter((c) => c.products.length && c.category.name !== "Add-ons").map((c) => (
                 <button
                   key={c.category.id}
                   onClick={() => setActiveCat(c.category.id)}
                   className={cn(
-                    "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-all",
-                    c.category.id === activeCat ? "border-[#af101a] bg-[#af101a] text-white shadow-sm" : "border-[#e4beba] bg-white text-[#605e5b] hover:border-[#af101a]/40",
+                    "w-full text-left rounded-xl border px-3 py-3 text-xs md:text-sm font-semibold transition-all leading-snug",
+                    c.category.id === activeCat 
+                      ? "border-[#af101a] bg-[#af101a] text-white shadow-sm font-bold" 
+                      : "border-[#e4beba] bg-white text-[#605e5b] hover:border-[#af101a]/40 hover:bg-[#ffe9e7]/10",
                   )}
                 >
                   {c.category.name}
@@ -314,29 +313,37 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-            {visibleProducts.map((p) => {
-              const minPrice = p.variants[0]?.price ?? 0;
-              const multi = p.variants.length > 1;
-              return (
-                <button key={p.group_key} onClick={() => setModalProduct(p)} className="group flex flex-col overflow-hidden rounded-xl border border-[#e4beba] bg-white text-left shadow-sm hover:border-[#af101a]/40 hover:shadow-md transition-all active:scale-[0.97]">
-                  <ItemPhoto src={p.photo_url} alt={p.name} className="h-24 w-full" />
-                  <div className="flex flex-col flex-1 p-3">
-                    <div className="text-sm font-semibold text-[#1A1A1A] line-clamp-2">{p.name}</div>
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                      <span className="text-sm font-bold text-[#af101a]">{multi ? "from " : ""}{formatRs(minPrice)}</span>
-                      <span className="grid h-7 w-7 place-items-center rounded-full bg-[#af101a] text-white text-lg font-bold shadow-sm group-hover:bg-[#8b0d14] transition-colors">+</span>
+          {/* Products Column */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="sm:hidden relative mb-4">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#8f6f6c]" style={{ fontSize: "16px" }}>search</span>
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search menu…" className="pl-9 pr-4 py-2.5 w-full rounded-xl border border-[#e4beba] bg-white text-sm text-[#1A1A1A] outline-none focus:border-[#af101a]" />
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {visibleProducts.map((p) => {
+                const minPrice = p.variants[0]?.price ?? 0;
+                const multi = p.variants.length > 1;
+                return (
+                  <button key={p.group_key} onClick={() => setModalProduct(p)} className="group flex flex-col overflow-hidden rounded-xl border border-[#e4beba] bg-white text-left shadow-sm hover:border-[#af101a]/40 hover:shadow-md transition-all active:scale-[0.97]">
+                    <ItemPhoto src={p.photo_url} alt={p.name} className="h-24 w-full" />
+                    <div className="flex flex-col flex-1 p-3">
+                      <div className="text-sm font-semibold text-[#1A1A1A] line-clamp-2">{p.name}</div>
+                      <div className="mt-auto flex items-center justify-between pt-2">
+                        <span className="text-sm font-bold text-[#af101a]">{multi ? "from " : ""}{formatRs(minPrice)}</span>
+                        <span className="grid h-7 w-7 place-items-center rounded-full bg-[#af101a] text-white text-lg font-bold shadow-sm group-hover:bg-[#8b0d14] transition-colors">+</span>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-            {visibleProducts.length === 0 && (
-              <div className="col-span-full py-12 text-center text-sm text-[#605e5b]">
-                <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-2">search_off</span>
-                No items found.
-              </div>
-            )}
+                  </button>
+                );
+              })}
+              {visibleProducts.length === 0 && (
+                <div className="col-span-full py-12 text-center text-sm text-[#605e5b]">
+                  <span className="material-symbols-outlined text-4xl text-[#e4beba] block mb-2">search_off</span>
+                  No items found.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

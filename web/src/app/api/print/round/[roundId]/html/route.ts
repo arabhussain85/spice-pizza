@@ -68,9 +68,10 @@ export async function GET(
     : ot === "delivery" ? `DELIVERY${tn ? ` #${tn}` : ""}`
     : `TABLE T-${String(full.table?.number ?? 0).padStart(2, "0")}`;
 
-  const date = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const time12 = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
-  const time24 = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const orderTime = full.order.opened_at ? new Date(full.order.opened_at) : new Date();
+  const date = orderTime.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const time12 = orderTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const time24 = orderTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const orderNoShort = full.order.order_number.replace(/^SP-/, "");
 
   // ────────────────────────────────────────────────────────
