@@ -163,7 +163,7 @@ function OrderDetailModal({ full, onClose, reload, onDelete }: { full: OrderFull
         </div>
 
         <div className="mt-4 flex gap-2">
-          <button onClick={() => window.open(`/api/print/bill/${full.order.id}`, "_blank")} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface px-3 py-2.5 text-sm font-semibold text-ink hover:bg-cream/40">
+          <button onClick={() => window.open(`/api/print/bill/${full.order.id}/html`, "_blank")} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface px-3 py-2.5 text-sm font-semibold text-ink hover:bg-cream/40">
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>print</span> Reprint
           </button>
           <button

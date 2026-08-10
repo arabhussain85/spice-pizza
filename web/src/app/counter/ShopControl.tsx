@@ -4,29 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getShiftStatus, openShift, closeShift, type ShiftStatus } from "./shift-actions";
 import { useConfirm } from "@/components/Confirm";
 
-/** Opens a PDF in a new tab and immediately triggers the Windows print dialog. */
-function autoPrint(pdfPath: string, win?: Window | null) {
-  const target = win ?? window.open("", "_blank");
-  if (!target) { window.open(pdfPath, "_blank"); return; }
-  const html = [
-    '<!DOCTYPE html><html><head><title>Printing\u2026</title>',
-    '<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111}',
-    'iframe{position:fixed;inset:0;width:100%;height:100%;border:none}',
-    '#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);',
-    'color:#fff;font:600 14px/1.6 system-ui;text-align:center;pointer-events:none}</style>',
-    '</head><body>',
-    '<div id="msg">\uD83D\uDDA8\uFE0F Preparing print\u2026<br><small>Print dialog will open automatically.</small></div>',
-    '<iframe id="f" src="' + pdfPath + '"></iframe>',
-    '<script>',
-    'var f=document.getElementById("f"),m=document.getElementById("msg"),done=false;',
-    'function go(){if(done)return;done=true;m.style.display="none";',
-    'try{f.contentWindow.focus();f.contentWindow.print();}catch(e){window.print();}}',
-    'f.onload=function(){setTimeout(go,600);};setTimeout(go,3500);',
-    '<\/script></body></html>',
-  ].join('');
-  target.document.write(html);
-  target.document.close();
-}
+
 
 /** Open Shop / Close Shop control. Closing prints the daily Z-report and resets the order token counter. */
 export function ShopControl() {
@@ -57,28 +35,22 @@ export function ShopControl() {
   }
 
   async function handleClose() {
-    // Open the print tab now (on the click) so it isn't popup-blocked after the awaits.
-    const printWin = window.open("", "_blank");
     const ok = await confirm({
       title: "Close the shop for today?",
       message: "This prints the daily Z-report and resets order tokens to #1.",
       confirmLabel: "Close shop",
       cancelLabel: "Not yet",
     });
-    if (!ok) {
-      printWin?.close();
-      return;
-    }
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await closeShift();
       if (!res.ok) {
-        printWin?.close();
         await notify({ title: "Can't close yet", message: res.error, danger: true });
         return;
       }
-      const url = `/api/print/zreport/${res.shiftId}`;
-      autoPrint(url, printWin);
+      // HTML route has @page { size: 80mm auto } — no infinite roll, no paper-size dialog
+      window.open(`/api/print/zreport/${res.shiftId}/html`, "_blank");
       await refresh();
     } finally {
       setBusy(false);
