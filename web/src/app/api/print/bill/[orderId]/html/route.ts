@@ -152,6 +152,7 @@ html, body {
   max-width: 120px;
   height: auto;
   filter: grayscale(1) contrast(1.5);
+  transform: rotate(-7deg);
 }
 
 /* ── Header ── */

@@ -4,6 +4,7 @@ import { billTotals } from "@/lib/order-math";
 import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promotions";
 import { fetchReceiptConfig } from "@/lib/receipt-config";
 import type { OrderLineItem } from "@/lib/types";
+import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -147,6 +148,19 @@ html, body {
   }
 }
 
+/* Logo styling */
+.logo-container {
+  text-align: center;
+  margin: 5px 0 10px;
+}
+.logo-img {
+  width: 32mm;
+  max-width: 120px;
+  height: auto;
+  filter: grayscale(1) contrast(1.5);
+  transform: rotate(-7deg);
+}
+
 .brand  { font-size:13pt; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:4px; }
 .sub    { font-size:8pt; font-weight:400; text-align:center; color:#333; line-height:1.4; }
 .sep    { border:none; border-top:1px solid #000; margin:6px 0; }
@@ -198,6 +212,10 @@ html, body {
 </style>
 </head>
 <body>
+
+<div class="logo-container">
+  <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
+</div>
 
 <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
 ${cfg.address ? `<p class="sub">${e(cfg.address)}</p>` : ""}

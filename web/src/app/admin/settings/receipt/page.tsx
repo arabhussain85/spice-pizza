@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Card, InputField, Switch, Pill } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { saveReceiptConfig } from "../../receipt-actions";
+import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
 export interface ReceiptCustomConfig {
   restaurantName: string;
@@ -248,6 +249,16 @@ export default function ReceiptCustomizerPage() {
               cfg.fontSize === "compact" ? "text-xs" : cfg.fontSize === "large" ? "text-base" : "text-sm"
             }`}
           >
+            {/* Logo */}
+            <div className="flex justify-center mb-3">
+              <img
+                src={`data:image/png;base64,${LOGO_PNG_BASE64}`}
+                alt="Logo"
+                className="w-24 h-auto object-contain filter grayscale contrast-[1.5]"
+                style={{ transform: "rotate(-7deg)" }}
+              />
+            </div>
+
             {/* Header */}
             <div className="text-center pb-3 border-b border-dashed border-gray-400 space-y-1">
               <h3 className="font-extrabold text-lg uppercase tracking-tight text-black">{cfg.restaurantName || "SPICE PIZZA"}</h3>

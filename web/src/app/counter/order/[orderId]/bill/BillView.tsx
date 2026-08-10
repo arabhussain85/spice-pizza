@@ -24,6 +24,8 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { useConfirm } from "@/components/Confirm";
 import { LoadingScreen } from "@/components/Loader";
 import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
+import { fetchReceiptConfig, RECEIPT_DEFAULTS, type ReceiptConfig } from "@/lib/receipt-config";
+import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
 export function BillView({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -33,6 +35,7 @@ export function BillView({ orderId }: { orderId: string }) {
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [meta, setMeta] = useState<Map<string, MenuMeta>>(new Map());
   const [discountsRole, setDiscountsRole] = useState<"owner" | "any">("owner");
+  const [cfg, setCfg] = useState<ReceiptConfig>(RECEIPT_DEFAULTS);
   const [showDiscount, setShowDiscount] = useState(false);
   const [showPay, setShowPay] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -55,6 +58,7 @@ export function BillView({ orderId }: { orderId: string }) {
       .then(({ data }) => data && setDiscountsRole(data.discounts_role));
     fetchActivePromotions(supa).then(setPromos).catch(() => {});
     fetchMenuMeta(supa).then(setMeta).catch(() => {});
+    fetchReceiptConfig(supa).then(setCfg).catch(() => {});
   }, [refetch]);
 
   /* ── Pending approval screen ────────────────────────────── */
@@ -200,11 +204,25 @@ export function BillView({ orderId }: { orderId: string }) {
       <div className="max-w-xl mx-auto px-4 py-6">
         {/* Receipt Paper Card */}
         <div className="receipt-paper rounded-xl relative px-6 pt-6 pb-12">
+          {/* Brand Logo */}
+          <div className="flex justify-center mb-4">
+            <img
+              src={`data:image/png;base64,${LOGO_PNG_BASE64}`}
+              alt="Logo"
+              className="w-[100px] h-auto object-contain filter grayscale contrast-[1.5] transition-transform duration-300"
+              style={{ transform: "rotate(-7deg)" }}
+            />
+          </div>
+
           {/* Restaurant Header */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-[#af101a] uppercase tracking-wider mb-1">Spice Pizza</h1>
-            <p className="text-sm text-[#605e5b]">Main Branch</p>
-            <p className="text-sm text-[#605e5b]">+92 300 000 0000</p>
+            <h1 className="text-xl font-black text-[#1a1a1a] uppercase tracking-wider mb-1">
+              {cfg.brand}
+            </h1>
+            {cfg.tagline && <p className="text-xs text-[#605e5b] italic mb-1">{cfg.tagline}</p>}
+            {cfg.address && <p className="text-xs text-[#605e5b] leading-tight mb-1">{cfg.address}</p>}
+            {cfg.phone && <p className="text-xs font-semibold text-[#271816]">Tel: {cfg.phone}</p>}
+            {cfg.ntn && <p className="text-[10px] text-[#605e5b] mt-1">{cfg.ntn}</p>}
           </div>
 
           {/* Meta */}
@@ -310,10 +328,20 @@ export function BillView({ orderId }: { orderId: string }) {
             </div>
           </div>
 
+          {cfg.showWifi && cfg.wifiSsid && (
+            <>
+              <div className="dotted-line" />
+              <div className="text-center text-xs font-semibold text-[#271816] py-1.5">
+                📶 Wi-Fi: {cfg.wifiSsid} / Pass: {cfg.wifiPass}
+              </div>
+            </>
+          )}
+
           <div className="dotted-line" />
-          <div className="text-center text-xs text-[#605e5b] mt-2">
-            <p className="font-bold text-[#271816] mb-1">THANK YOU FOR VISITING!</p>
-            <p>Follow us on Instagram <span className="font-bold text-[#af101a]">@SpicePizza</span></p>
+          <div className="text-center text-xs text-[#605e5b] mt-2 space-y-1">
+            {cfg.footer && <p className="italic">{cfg.footer}</p>}
+            <p className="font-bold text-[#271816] uppercase">** THANK YOU FOR VISITING! **</p>
+            <p className="text-[10px] text-[#8c7471] tracking-widest uppercase">*** POWERED BY {cfg.brand || "SPICE PIZZA"} ***</p>
           </div>
         </div>
 
