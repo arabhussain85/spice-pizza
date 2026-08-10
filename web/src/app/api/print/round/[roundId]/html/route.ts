@@ -163,7 +163,7 @@ export async function GET(
   </tr>` : "";
 
   const wifiBlock = cfg.showWifi && cfg.wifiSsid
-    ? `<p class="wifi"><b>Wi-Fi: ${e(cfg.wifiSsid)} / ${e(cfg.wifiPass)}</b></p>`
+    ? `<p class="wifi">Wi-Fi: ${e(cfg.wifiSsid)} / ${e(cfg.wifiPass)}</p>`
     : "";
 
   const html = `<!DOCTYPE html>
@@ -172,23 +172,25 @@ export async function GET(
 <meta charset="UTF-8">
 <title>Order ${e(full.order.order_number)} - Slips</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @page { size: 80mm auto; margin: 3mm 4mm; }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
 html, body {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 9.5pt;
-  font-weight: normal; /* Normal weight for premium styling */
-  line-height: 1.4;
-  width: 74mm;
-  max-width: 74mm;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 400;
+  line-height: 1.45;
+  width: 72mm;
+  max-width: 72mm;
   color: #000;
   background: #fff;
 }
 
 @media print {
-  html, body { width: 74mm; max-width: 74mm; }
+  html, body { width: 72mm; max-width: 72mm; }
   .page-break {
     display: block;
     page-break-before: always;
@@ -204,127 +206,128 @@ html, body {
   }
   .receipt-page {
     background: #fff;
-    border: 2px solid #000;
-    padding: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 15px;
     margin-bottom: 20px;
+    border-radius: 8px;
   }
 }
 
 /* Logo styling */
 .logo-container {
   text-align: center;
-  margin: 5px 0;
+  margin: 5px 0 10px;
 }
 .logo-img {
-  width: 50mm;
-  max-width: 180px;
+  width: 32mm;
+  max-width: 120px;
   height: auto;
+  filter: grayscale(1) contrast(1.5);
 }
 
-/* ────────────────────────────────────────────────────────
-   COMMON STYLE COMPONENTS
-   ──────────────────────────────────────────────────────── */
-.brand        { font-size:16pt; font-weight:bold; letter-spacing:3px; text-align:center; margin:3px 0 2px; }
-.hsub         { font-size:9pt; font-weight:bold; text-align:center; line-height:1.6; }
-.sep-solid    { border:none; border-top:3px solid #000; margin:4px 0; }
-.sep-solid-2  { border:none; border-top:2px solid #000; margin:4px 0; }
-.sep-dash     { border:none; border-top:2px dashed #000; margin:3px 0; }
-.hborder      { text-align:center; font-size:9pt; font-weight:bold; margin:1px 0; }
+/* ── Common style elements ── */
+.brand        { font-size:13pt; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; text-align:center; margin-bottom:4px; }
+.hsub         { font-size:8pt; font-weight:400; text-align:center; line-height:1.4; color:#333; }
+.sep-solid    { border:none; border-top:1px solid #000; margin:6px 0; }
+.sep-solid-2  { border:none; border-top:1px solid #000; margin:6px 0; }
+.sep-dash     { border:none; border-top:1px dashed #000; margin:6px 0; }
+.hborder      { text-align:center; font-size:9pt; font-weight:bold; margin:1px 0; display:none; }
 
 .token-box {
-  border: 3px solid #000;
+  border: 1.5px solid #000;
   text-align: center;
-  font-size: 20pt;
-  font-weight: bold;
-  letter-spacing: 3px;
-  padding: 3px 4px;
-  margin: 4px 0;
+  font-size: 13pt;
+  font-weight: 700;
+  padding: 4px;
+  margin: 8px 0;
+  text-transform: uppercase;
 }
 
-.meta { width:100%; font-size:10pt; font-weight:bold; border-collapse:collapse; margin:3px 0; }
-.meta td { padding:1.5px 0; vertical-align:top; }
-.meta .ml { width:55%; }
-.meta .mr { width:45%; text-align:right; }
+.meta { width:100%; font-size:8pt; border-collapse:collapse; margin:6px 0; }
+.meta td { padding:2px 0; vertical-align:top; }
+.meta .ml { width:55%; color:#222; }
+.meta .mr { width:45%; text-align:right; color:#222; }
 
-/* ────────────────────────────────────────────────────────
-   SLIP 1: KITCHEN SPECIFIC STYLES
-   ──────────────────────────────────────────────────────── */
-.kitchen-title { font-size:14pt; font-weight:bold; text-align:center; letter-spacing:2px; margin:3px 0; }
-.round-badge   { font-size:13pt; font-weight:bold; text-align:center; letter-spacing:2px; margin:3px 0; padding:2px 0; border-top:3px solid #000; border-bottom:3px solid #000; }
+/* ── Slip 1: Kitchen specifiche ── */
+.kitchen-title { font-size:12pt; font-weight:700; text-align:center; letter-spacing:1px; margin:4px 0; text-transform:uppercase; }
+.round-badge   { font-size:10pt; font-weight:700; text-align:center; letter-spacing:1px; margin:6px 0; padding:4px 0; border-top:1px solid #000; border-bottom:1px solid #000; }
 
-.k-items { width:100%; border-collapse:collapse; font-size:11pt; font-weight:bold; }
-.k-items col.c-qty  { width:12mm; }
+.k-items { width:100%; border-collapse:collapse; font-size:9.5pt; font-weight:500; }
+.k-items col.c-qty  { width:9mm; }
 .k-items col.c-name { }
-.k-items col.c-amt  { width:20mm; }
-.k-items thead tr   { border-top:2px solid #000; border-bottom:2px solid #000; }
-.k-items thead th   { font-size:9pt; font-weight:bold; text-transform:uppercase; padding:3px 0; }
+.k-items col.c-amt  { width:18mm; }
+.k-items thead tr   { border-top:1px solid #000; border-bottom:1px solid #000; }
+.k-items thead th   { font-size:8pt; font-weight:600; text-transform:uppercase; padding:5px 0; }
 .k-items thead th.c-qty  { text-align:left; }
 .k-items thead th.c-name { text-align:left; padding-left:3px; }
 .k-items thead th.c-amt  { text-align:right; }
-.k-items tbody tr   { border-bottom:2px dashed #000; }
-.k-items tbody td   { padding:4px 0; vertical-align:top; font-weight:bold; }
-.k-items tbody td.c-qty  { font-size:13pt; padding-top:5px; }
-.k-items tbody td.c-name { padding-left:3px; line-height:1.4; }
+.k-items tbody tr   { border-bottom:1px dashed #eee; }
+.k-items tbody td   { padding:6px 0; vertical-align:top; }
+.k-items tbody td.c-qty  { font-size:11pt; font-weight:700; padding-top:4px; }
+.k-items tbody td.c-name { padding-left:3px; font-weight:600; line-height:1.35; }
 .k-items tbody td.c-amt  { text-align:right; white-space:nowrap; }
 
-.mod  { font-size:9pt; display:block; padding-left:3px; }
-.cont { font-size:9pt; display:block; padding-left:3px; }
+.mod  { font-size:8pt; font-weight:400; color:#555; display:block; padding-left:3px; margin-top:1px; }
+.cont { font-size:8pt; font-weight:400; color:#555; display:block; padding-left:3px; margin-top:1px; }
 
-.k-total { width:100%; border-collapse:collapse; border-top:3px solid #000; border-bottom:3px solid #000; margin:4px 0; }
-.k-total td { padding:4px 0; font-weight:bold; }
-.k-lbl { font-size:13pt; }
-.k-val { font-size:14pt; text-align:right; white-space:nowrap; }
+.k-total { width:100%; border-collapse:collapse; border-top:1px solid #000; border-bottom:1px solid #000; margin:6px 0; }
+.k-total td { padding:5px 0; font-weight:700; }
+.k-lbl { font-size:10pt; }
+.k-val { font-size:11pt; text-align:right; white-space:nowrap; }
 
-/* ────────────────────────────────────────────────────────
-   SLIP 2: BILL SPECIFIC STYLES
-   ──────────────────────────────────────────────────────── */
-.b-items { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; }
-.b-items col.c-no  { width:7mm; }
-.b-items col.c-qty { width:10mm; }
-.b-items col.c-amt { width:21mm; }
-.b-items thead tr  { border-top:3px solid #000; border-bottom:3px solid #000; }
-.b-items thead th  { font-size:9pt; font-weight:bold; text-transform:uppercase; padding:4px 0; }
+/* ── Slip 2: Bill specifiche ── */
+.b-items { width:100%; border-collapse:collapse; font-size:8.5pt; margin:8px 0; }
+.b-items col.c-no  { width:6mm; }
+.b-items col.c-qty { width:9mm; }
+.b-items col.c-amt { width:18mm; }
+.b-items thead tr  { border-top:1px solid #000; border-bottom:1px solid #000; }
+.b-items thead th  { font-size:7.5pt; font-weight:600; text-transform:uppercase; padding:5px 0; }
 .b-items thead th.c-no   { text-align:left; }
 .b-items thead th.c-name { text-align:left; padding-left:3px; }
 .b-items thead th.c-qty  { text-align:center; }
 .b-items thead th.c-amt  { text-align:right; }
-.b-items tbody tr  { border-bottom:2px dashed #000; }
-.b-items tbody td  { padding:4px 0; vertical-align:top; font-weight:bold; }
-.b-items tbody td.c-no   { font-size:9pt; padding-top:5px; }
-.b-items tbody td.c-name { padding-left:3px; line-height:1.4; }
-.b-items tbody td.c-qty  { text-align:center; }
-.b-items tbody td.c-amt  { text-align:right; white-space:nowrap; }
-.b-items tfoot tr  { border-top:3px solid #000; }
-.b-items tfoot td  { padding:4px 0; font-size:9pt; font-weight:bold; }
+.b-items tbody tr  { border-bottom:1px dashed #eee; }
+.b-items tbody td  { padding:5px 0; vertical-align:top; }
+.b-items tbody td.c-no   { font-size:7.5pt; color:#555; padding-top:5px; }
+.b-items tbody td.c-name { padding-left:3px; font-weight:500; line-height:1.35; }
+.b-items tbody td.c-qty  { text-align:center; font-weight:500; }
+.b-items tbody td.c-amt  { text-align:right; white-space:nowrap; font-weight:500; }
+.b-items tfoot tr  { border-top:1px solid #000; }
+.b-items tfoot td  { padding:6px 0; font-size:8pt; font-weight:600; }
 .b-items tfoot td.c-qty { text-align:center; }
 
-.totals { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; margin:3px 0; }
+.totals { width:100%; border-collapse:collapse; font-size:8.5pt; margin:6px 0; }
 .totals td { padding:2px 0; }
-.totals .lbl { }
-.totals .val { text-align:right; white-space:nowrap; }
+.totals .lbl { color:#333; }
+.totals .val { text-align:right; white-space:nowrap; font-weight:500; }
 
-.grand { width:100%; border-collapse:collapse; border-top:3px solid #000; border-bottom:3px solid #000; margin:4px 0; }
-.grand td { padding:5px 0; }
-.g-lbl { font-size:14pt; }
-.g-val { font-size:17pt; text-align:right; white-space:nowrap; }
+.grand { width:100%; border-collapse:collapse; border-top:1.5px solid #000; border-bottom:1.5px solid #000; margin:6px 0; }
+.grand td { padding:6px 0; }
+.g-lbl { font-size:11pt; font-weight:700; }
+.g-val { font-size:13pt; font-weight:700; text-align:right; white-space:nowrap; }
 
-.pay { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; margin:2px 0; }
-.pay td { padding:2px 0; }
-.pay .p-lbl { }
-.pay .p-val { text-align:right; white-space:nowrap; }
-.pay .p-chg { text-align:right; font-size:12pt; white-space:nowrap; }
+.pay { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 4px 0; }
+.pay td { padding: 2px 0; }
+.pay .p-lbl { color: #333; }
+.pay .p-val { text-align: right; white-space: nowrap; font-weight: 500; }
+.pay .p-chg { text-align: right; font-size: 10pt; font-weight: 700; white-space: nowrap; }
 
-.wifi   { font-size:9pt; text-align:center; margin:3px 0; }
-.footer { text-align:center; font-size:9pt; line-height:1.8; margin-top:3px; }
-.thanks { font-size:11pt; letter-spacing:1px; }
+.wifi   { font-size:8pt; font-weight:500; text-align:center; margin:6px 0; }
+.footer { text-align:center; font-size:8pt; line-height:1.6; margin-top:8px; color:#222; }
+.thanks { font-size:9pt; font-weight:600; letter-spacing:0.5px; margin-top:4px; }
 </style>
 </head>
 <body>
 
 <!-- SLIP 1: KITCHEN / TOKEN ORDER -->
 <div class="receipt-page">
+  <div class="logo-container">
+    <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
+  </div>
+
   <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
-  <p class="hsub">KITCHEN ORDER</p>
+  <p class="kitchen-title">KITCHEN ORDER</p>
   <hr class="sep-solid">
 
   ${full.order.token_number != null
@@ -381,15 +384,15 @@ html, body {
     <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
   </div>
 
-  <p class="hborder">================================</p>
-  <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
-  ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
-  ${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
-  ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
-  ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
-  <p class="hborder">================================</p>
+  <div class="header-wrap">
+    <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
+    ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
+    ${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
+    ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
+    ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
+  </div>
 
-  ${full.order.token_number != null ? `<div class="token-box" style="font-size: 16pt; font-weight: bold; letter-spacing: 2px; border-width: 3px; padding: 3px 4px;">TOKEN # ${full.order.token_number}</div>` : ""}
+  ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order.token_number}</div>` : ""}
 
   <table class="meta">
     <tr>

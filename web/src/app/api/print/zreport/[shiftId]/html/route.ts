@@ -114,80 +114,94 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 <meta charset="UTF-8">
 <title>Z-Report — ${e(cfg.brand || "Spice Pizza")}</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @page { size: 80mm auto; margin: 3mm 4mm; }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
-body {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 10pt;
-  font-weight: bold;
-  line-height: 1.5;
-  width: 74mm;
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 400;
+  line-height: 1.45;
+  width: 72mm;
+  max-width: 72mm;
   color: #000;
   background: #fff;
+  overflow: hidden;
+}
+
+@media print {
+  html, body { overflow: hidden; width: 72mm; max-width: 72mm; }
 }
 
 @media screen {
-  body { padding: 10px; margin: 20px auto; border: 2px solid #000; }
+  body {
+    padding: 15px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #fff;
+    border-radius: 8px;
+  }
 }
 
-.brand  { font-size:14pt; font-weight:bold; text-align:center; letter-spacing:3px; margin-bottom:2px; }
-.sub    { font-size:9pt; font-weight:bold; text-align:center; }
-.sep    { border:none; border-top:3px solid #000; margin:4px 0; }
-.dash   { border:none; border-top:2px dashed #000; margin:3px 0; }
+.brand  { font-size:13pt; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:4px; }
+.sub    { font-size:8pt; font-weight:400; text-align:center; color:#333; line-height:1.4; }
+.sep    { border:none; border-top:1px solid #000; margin:6px 0; }
+.dash   { border:none; border-top:1px dashed #000; margin:6px 0; }
 
 .z-title {
-  font-size: 13pt;
-  font-weight: bold;
+  font-size: 11pt;
+  font-weight: 700;
   text-align: center;
-  letter-spacing: 2px;
-  border-top: 3px solid #000;
-  border-bottom: 3px solid #000;
-  padding: 3px 0;
-  margin: 4px 0;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 4px 0;
+  margin: 8px 0;
+  text-transform: uppercase;
 }
 
-.meta  { width:100%; border-collapse:collapse; font-size:9.5pt; font-weight:bold; margin:3px 0; }
-.meta td { padding:1.5px 0; }
+.meta  { width:100%; border-collapse:collapse; font-size:8pt; margin:6px 0; }
+.meta td { padding:2px 0; }
 .meta .mr { text-align:right; }
 
 .section-head {
-  font-size: 9pt;
-  font-weight: bold;
+  font-size: 8pt;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin: 4px 0 2px;
+  margin: 8px 0 4px;
 }
 
-.tbl { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; margin:2px 0; }
+.tbl { width:100%; border-collapse:collapse; font-size:8.5pt; margin:4px 0; }
 .tbl td { padding:2px 0; }
-.tbl .lbl { }
-.tbl .val { text-align:right; white-space:nowrap; }
+.tbl .lbl { color:#333; }
+.tbl .val { text-align:right; white-space:nowrap; font-weight:500; }
 
 .grand {
   width:100%;
   border-collapse:collapse;
-  border-top:3px solid #000;
-  border-bottom:3px solid #000;
-  margin:4px 0;
+  border-top:1.5px solid #000;
+  border-bottom:1.5px solid #000;
+  margin:6px 0;
 }
-.grand td { padding:4px 0; font-weight:bold; }
-.g-lbl { font-size:12pt; }
-.g-val { font-size:14pt; text-align:right; white-space:nowrap; }
+.grand td { padding:6px 0; }
+.g-lbl { font-size:11pt; font-weight:700; }
+.g-val { font-size:13pt; font-weight:700; text-align:right; white-space:nowrap; }
 
-.counts { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; }
+.counts { width:100%; border-collapse:collapse; font-size:8.5pt; }
 .counts td { padding:2px 0; }
-.counts .cr { text-align:right; }
+.counts .cr { text-align:right; font-weight:500; }
 
-.footer { text-align:center; font-size:9pt; font-weight:bold; margin-top:4px; line-height:1.8; }
+.footer { text-align:center; font-size:8pt; line-height:1.6; margin-top:8px; color:#222; }
 </style>
 </head>
 <body>
 
 <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
 ${cfg.address ? `<p class="sub">${e(cfg.address)}</p>` : ""}
-<div class="z-title">*** Z-REPORT ***</div>
+<div class="z-title">Z-REPORT</div>
 
 <table class="meta">
   <tr><td>Opened</td><td class="mr">${e(fmtDT(shift.opened_at))}</td></tr>

@@ -108,137 +108,147 @@ export async function GET(
 <meta charset="UTF-8">
 <title>Receipt #${e(full.order.order_number)}</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @page { size: 80mm auto; margin: 3mm 4mm; }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
 html, body {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 9.5pt;
-  font-weight: normal; /* Changed from bold to normal for elegant layout */
-  line-height: 1.4;
-  width: 74mm;
-  max-width: 74mm;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 400;
+  line-height: 1.45;
+  width: 72mm;
+  max-width: 72mm;
   color: #000;
   background: #fff;
   overflow: hidden;        /* never spill to a 2nd page */
 }
 
 @media print {
-  html, body { overflow: hidden; width: 74mm; max-width: 74mm; }
+  html, body { overflow: hidden; width: 72mm; max-width: 72mm; }
   .footer { page-break-after: avoid; }
 }
 
 @media screen {
   body {
-    padding: 10px;
+    padding: 15px;
     margin: 20px auto;
-    border: 2px solid #000;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     background: #fff;
+    border-radius: 8px;
   }
 }
 
 /* Logo styling */
 .logo-container {
   text-align: center;
-  margin: 5px 0;
+  margin: 5px 0 10px;
 }
 .logo-img {
-  width: 50mm;
-  max-width: 180px;
+  width: 32mm;
+  max-width: 120px;
   height: auto;
+  filter: grayscale(1) contrast(1.5);
 }
 
 /* ── Header ── */
-.hborder { text-align:center; font-size:9pt; font-weight:bold; margin:1px 0; }
-.brand   { font-size:16pt; font-weight:bold; letter-spacing:3px; text-align:center; margin:3px 0 2px; }
-.hsub    { font-size:9pt; font-weight:bold; text-align:center; line-height:1.6; }
+.header-wrap {
+  text-align: center;
+  border-bottom: 1px dashed #000;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.brand   { font-size: 13pt; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+.hsub    { font-size: 8pt; font-weight: 400; color: #333; line-height: 1.4; }
 
 /* ── Token ── */
 .token-box {
-  border: 3px solid #000;
+  border: 1.5px solid #000;
   text-align: center;
   font-size: 13pt;
-  font-weight: bold;
-  letter-spacing: 2px;
-  padding: 3px 4px;
-  margin: 4px 0;
+  font-weight: 700;
+  padding: 4px;
+  margin: 8px 0;
+  text-transform: uppercase;
 }
 
 /* ── Meta ── */
-.meta { width:100%; font-size:9.5pt; font-weight:bold; border-collapse:collapse; margin:3px 0; }
-.meta td { padding:1.5px 0; vertical-align:top; }
-.meta .ml { width:55%; }
-.meta .mr { width:45%; text-align:right; }
+.meta { width: 100%; font-size: 8pt; border-collapse: collapse; margin: 6px 0; }
+.meta td { padding: 2px 0; vertical-align: top; }
+.meta .ml { width: 55%; color: #222; }
+.meta .mr { width: 45%; text-align: right; color: #222; }
 
 /* ── Separators ── */
-.sep-solid { border:none; border-top:2px solid #000; margin:4px 0; }
-.sep-dash  { border:none; border-top:2px dashed #000; margin:3px 0; }
+.sep-solid { border: none; border-top: 1px solid #000; margin: 6px 0; }
+.sep-dash  { border: none; border-top: 1px dashed #000; margin: 6px 0; }
 
 /* ── Items table ── */
-.items { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; }
-.items col.c-no  { width:7mm; }
-.items col.c-qty { width:10mm; }
-.items col.c-amt { width:21mm; }
+.items { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 8px 0; }
+.items col.c-no  { width: 6mm; }
+.items col.c-qty { width: 9mm; }
+.items col.c-amt { width: 18mm; }
 
 .items thead tr {
-  border-top: 3px solid #000;
-  border-bottom: 3px solid #000;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
 }
 .items thead th {
-  font-size:9pt;
-  font-weight:bold;
-  text-transform:uppercase;
-  padding:4px 0;
+  font-size: 7.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 5px 0;
 }
-.items thead th.c-no   { text-align:left; }
-.items thead th.c-name { text-align:left; padding-left:3px; }
-.items thead th.c-qty  { text-align:center; }
-.items thead th.c-amt  { text-align:right; }
+.items thead th.c-no   { text-align: left; }
+.items thead th.c-name { text-align: left; padding-left: 3px; }
+.items thead th.c-qty  { text-align: center; }
+.items thead th.c-amt  { text-align: right; }
 
-.items tbody tr { border-bottom: 2px dashed #000; }
-.items tbody td { padding:4px 0; vertical-align:top; font-weight:bold; }
-.items tbody td.c-no   { font-size:9pt; padding-top:5px; }
-.items tbody td.c-name { padding-left:3px; line-height:1.4; }
-.items tbody td.c-qty  { text-align:center; }
-.items tbody td.c-amt  { text-align:right; white-space:nowrap; }
+.items tbody tr { border-bottom: 1px dashed #eee; }
+.items tbody td { padding: 5px 0; vertical-align: top; }
+.items tbody td.c-no   { font-size: 7.5pt; color: #555; text-align: left; }
+.items tbody td.c-name { padding-left: 3px; font-weight: 500; line-height: 1.35; }
+.items tbody td.c-qty  { text-align: center; font-weight: 500; }
+.items tbody td.c-amt  { text-align: right; white-space: nowrap; font-weight: 500; }
 
-.items tfoot tr { border-top: 3px solid #000; }
-.items tfoot td { padding:4px 0; font-size:9pt; font-weight:bold; }
-.items tfoot td.c-qty { text-align:center; }
+.items tfoot tr { border-top: 1px solid #000; }
+.items tfoot td { padding: 6px 0; font-size: 8pt; font-weight: 600; }
+.items tfoot td.c-qty { text-align: center; }
 
 /* modifier note */
-.mod { font-size:8.5pt; font-weight:bold; display:block; padding-left:3px; }
+.mod { font-size: 7.5pt; font-weight: 400; color: #444; display: block; padding-left: 3px; margin-top: 1px; }
 
 /* ── Totals ── */
-.totals { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; margin:3px 0; }
-.totals td { padding:2px 0; font-weight:bold; }
-.totals .lbl { }
-.totals .val { text-align:right; white-space:nowrap; }
+.totals { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 6px 0; }
+.totals td { padding: 2px 0; }
+.totals .lbl { color: #333; }
+.totals .val { text-align: right; white-space: nowrap; font-weight: 500; }
 
 /* ── Grand total ── */
 .grand {
-  width:100%;
-  border-collapse:collapse;
-  border-top: 3px solid #000;
-  border-bottom: 3px solid #000;
-  margin:4px 0;
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1.5px solid #000;
+  border-bottom: 1.5px solid #000;
+  margin: 6px 0;
 }
-.grand td { padding:5px 0; }
-.g-lbl { font-size:14pt; font-weight:bold; letter-spacing:1px; }
-.g-val { font-size:17pt; font-weight:bold; text-align:right; white-space:nowrap; }
+.grand td { padding: 6px 0; }
+.g-lbl { font-size: 11pt; font-weight: 700; }
+.g-val { font-size: 13pt; font-weight: 700; text-align: right; white-space: nowrap; }
 
 /* ── Payment ── */
-.pay { width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold; margin:2px 0; }
-.pay td { padding:2px 0; font-weight:bold; }
-.pay .p-lbl { }
-.pay .p-val { text-align:right; white-space:nowrap; }
-.pay .p-chg { text-align:right; font-size:12pt; font-weight:bold; white-space:nowrap; }
+.pay { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 4px 0; }
+.pay td { padding: 2px 0; }
+.pay .p-lbl { color: #333; }
+.pay .p-val { text-align: right; white-space: nowrap; font-weight: 500; }
+.pay .p-chg { text-align: right; font-size: 10pt; font-weight: 700; white-space: nowrap; }
 
 /* ── WiFi / Footer ── */
-.wifi   { font-size:9pt; font-weight:bold; text-align:center; margin:3px 0; }
-.footer { text-align:center; font-size:9pt; font-weight:bold; line-height:1.8; margin-top:3px; }
-.thanks { font-size:11pt; font-weight:bold; letter-spacing:1px; }
+.wifi   { font-size: 8pt; font-weight: 500; text-align: center; margin: 6px 0; }
+.footer { text-align: center; font-size: 8pt; line-height: 1.6; margin-top: 8px; color: #222; }
+.thanks { font-size: 9pt; font-weight: 600; letter-spacing: 0.5px; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -247,15 +257,15 @@ html, body {
   <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
 </div>
 
-<p class="hborder">================================</p>
-<p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
-${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
-${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
-${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
-${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
-<p class="hborder">================================</p>
+<div class="header-wrap">
+  <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
+  ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
+  ${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
+  ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
+  ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
+</div>
 
-${full.order.token_number != null ? `<div class="token-box" style="font-size: 16pt; font-weight: bold; letter-spacing: 2px; border-width: 3px; padding: 3px 4px;">TOKEN # ${full.order.token_number}</div>` : ""}
+${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order.token_number}</div>` : ""}
 
 <table class="meta">
   <tr>
