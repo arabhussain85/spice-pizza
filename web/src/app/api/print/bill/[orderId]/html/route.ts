@@ -281,6 +281,7 @@ ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order
   ${full.order.server_name  ? `<tr><td class="ml">Staff: ${e(full.order.server_name)}</td><td></td></tr>` : ""}
   ${full.order.customer_name  ? `<tr><td class="ml">Cust: ${e(full.order.customer_name)}</td><td></td></tr>` : ""}
   ${full.order.customer_phone ? `<tr><td class="ml">Tel:  ${e(full.order.customer_phone)}</td><td></td></tr>` : ""}
+  ${full.order.customer_address ? `<tr><td class="ml" colspan="2">Addr: ${e(full.order.customer_address)}</td></tr>` : ""}
 </table>
 
 <table class="items">

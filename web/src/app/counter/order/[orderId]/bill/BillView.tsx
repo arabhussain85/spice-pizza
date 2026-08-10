@@ -239,8 +239,9 @@ export function BillView({ orderId }: { orderId: string }) {
                 <p className="font-bold text-[#af101a] uppercase">{orderLabel}</p>
               )}
               {o.token_number != null && <p>Token <span className="font-bold text-[#af101a]">#{o.token_number}</span></p>}
-              {o.customer_name && <p>{o.customer_name}</p>}
-              {o.customer_phone && <p>{o.customer_phone}</p>}
+              {o.customer_name && <p>Cust: {o.customer_name}</p>}
+              {o.customer_phone && <p>Tel: {o.customer_phone}</p>}
+              {o.customer_address && <p>Addr: {o.customer_address}</p>}
             </div>
           </div>
           <div className="dotted-line" />

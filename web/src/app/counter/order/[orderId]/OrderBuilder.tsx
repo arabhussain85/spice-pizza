@@ -204,8 +204,14 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
         setBanner(res.error);
         return;
       }
-      // Redirect to the combined HTML route that prints BOTH slips in one go.
-      if (printWin) printWin.location.href = `/api/print/round/${res.roundId}/html`;
+      // Round 1 prints kitchen slip + bill slip. Round 2+ only prints kitchen slip.
+      if (printWin) {
+        if (res.roundNumber > 1) {
+          printWin.location.href = `/api/print/kitchen/${res.roundId}/html`;
+        } else {
+          printWin.location.href = `/api/print/round/${res.roundId}/html`;
+        }
+      }
 
       await refetchOrder();
       setCartOpen(false);
