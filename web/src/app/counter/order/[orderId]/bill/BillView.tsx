@@ -122,7 +122,7 @@ export function BillView({ orderId }: { orderId: string }) {
             </div>
             <div className="opacity-0 animate-fade-up animate-delay-3 w-full flex flex-col sm:flex-row gap-4" style={{animationFillMode:'forwards'}}>
               <button
-                onClick={() => printReceipt(orderId, `/api/print/bill/${orderId}`)}
+                onClick={() => printReceipt(orderId)}
                 className="flex-1 h-12 flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
               >
                 <span className="material-symbols-outlined" style={{fontSize:'20px'}}>print</span>
@@ -320,7 +320,7 @@ export function BillView({ orderId }: { orderId: string }) {
         {/* Actions */}
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => printReceipt(orderId, `/api/print/bill/${orderId}`)}
+            onClick={() => printReceipt(orderId)}
             className="flex items-center justify-center gap-2 bg-white text-[#271816] border border-[#8f6f6c] text-sm font-semibold h-12 px-5 rounded-xl shadow-sm hover:bg-[#fff0ef] transition-all active:scale-[0.97]"
           >
             <span className="material-symbols-outlined" style={{fontSize:'18px'}}>print</span>
