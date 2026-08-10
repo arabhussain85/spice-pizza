@@ -93,8 +93,8 @@ export async function POST(
       ot === "dine_in"
         ? null
         : { name: full.order.customer_name, phone: full.order.customer_phone, address: full.order.customer_address },
-    date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-    time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }),
+    date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
+    time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Karachi" }),
     staff: full.order.server_name ? `${full.order.server_name} (Counter)` : undefined,
     items: live.map(item),
     subtotal: formatRs(totals.subtotal),

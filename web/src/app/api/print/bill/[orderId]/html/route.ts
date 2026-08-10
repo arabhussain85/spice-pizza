@@ -51,9 +51,9 @@ export async function GET(
     : ot === "delivery" ? `Delivery${tn ? ` #${tn}` : ""}`
     : `Table #${full.table?.number ?? "?"}`;
 
-  const orderTime = full.order.opened_at ? new Date(full.order.opened_at) : new Date();
-  const date = orderTime.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const time = orderTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const now = new Date();
+  const date = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Karachi" });
+  const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Karachi" });
 
   const e = (s?: string | null) =>
     (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
