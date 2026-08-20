@@ -23,7 +23,7 @@ import { cn } from "@/components/ui";
 import { BottomSheet } from "@/components/BottomSheet";
 import { useConfirm } from "@/components/Confirm";
 import { LoadingScreen } from "@/components/Loader";
-import { closeAndPay, setDiscount, validateOwnerPin, voidLineItem } from "../../../actions";
+import { closeAndPay, setDiscount, updateLineItemQuantity, validateOwnerPin, voidLineItem } from "../../../actions";
 import { fetchReceiptConfig, RECEIPT_DEFAULTS, type ReceiptConfig } from "@/lib/receipt-config";
 import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
@@ -182,6 +182,24 @@ export function BillView({ orderId }: { orderId: string }) {
     await refetch();
   }
 
+  // Edit the quantity of an item on the ongoing bill (min 1; use × to remove).
+  async function changeQty(lineId: string, next: number) {
+    if (next < 1) return;
+    setOrder((prev) =>
+      prev
+        ? {
+            ...prev,
+            rounds: prev.rounds.map((r) => ({
+              ...r,
+              order_line_items: r.order_line_items.map((x) => (x.id === lineId ? { ...x, quantity: next } : x)),
+            })),
+          }
+        : prev,
+    );
+    await updateLineItemQuantity(lineId, next);
+    await refetch();
+  }
+
   return (
     <div className="min-h-screen bg-[#FCF9F5]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* ── Header ──────────────────────────────────────────── */}
@@ -278,7 +296,28 @@ export function BillView({ orderId }: { orderId: string }) {
                         )}
                         {li.is_voided && <span className="text-xs">(void: {li.void_reason})</span>}
                       </div>
-                      <span className="w-1/5 text-center text-[#605e5b]">{li.quantity}</span>
+                      {li.is_voided ? (
+                        <span className="w-1/5 text-center text-[#605e5b] line-through">{li.quantity}</span>
+                      ) : (
+                        <div className="w-1/5 flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => changeQty(li.id, li.quantity - 1)}
+                            disabled={li.quantity <= 1}
+                            aria-label="decrease"
+                            className="grid h-6 w-6 place-items-center rounded-full bg-black/5 text-sm font-bold text-[#1A1A1A] hover:bg-black/10 disabled:opacity-40"
+                          >
+                            −
+                          </button>
+                          <span className="w-4 text-center tabular-nums">{li.quantity}</span>
+                          <button
+                            onClick={() => changeQty(li.id, li.quantity + 1)}
+                            aria-label="increase"
+                            className="grid h-6 w-6 place-items-center rounded-full bg-black/5 text-sm font-bold text-[#1A1A1A] hover:bg-black/10"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
                       <div className="w-1/5 text-right flex items-start justify-end gap-1">
                         <span className={cn("font-semibold tabular-nums", li.is_voided && "text-[#605e5b] line-through")}>
                           {formatRs(li.unit_price * li.quantity)}
