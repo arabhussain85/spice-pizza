@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
+import { printSilent } from "@/lib/print-client";
+
 /**
- * Opens the 80mm HTML receipt page in a new tab.
- * The page auto-calls window.print() and sets @page { size: 80mm auto }
- * so the browser print dialog uses the correct paper width — no infinite roll.
- * No local bridge or extra software needed.
+ * Prints the 80mm HTML receipt with no visible tab. The page auto-calls
+ * window.print() and sets @page { size: 80mm auto } for correct paper width.
  */
 function printReceipt(orderId: string) {
-  window.open(`/api/print/bill/${orderId}/html`, "_blank");
+  printSilent(`/api/print/bill/${orderId}/html`);
 }
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchOrderFull, type OrderFull } from "@/lib/queries";
 import type { PaymentMethod } from "@/lib/types";

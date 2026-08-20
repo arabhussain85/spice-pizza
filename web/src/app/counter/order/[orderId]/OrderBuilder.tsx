@@ -7,12 +7,12 @@ import { useRouter } from "next/navigation";
 import { useConfirm } from "@/components/Confirm";
 import { createClient } from "@/lib/supabase/client";
 import {
-  fetchMenu,
   fetchOrderFull,
   type MenuCategoryWithProducts,
   type OrderFull,
   type RoundWithItems,
 } from "@/lib/queries";
+import { cachedMenu, loadMenu } from "@/lib/menu-cache";
 import type { MenuProduct, OrderLineItem } from "@/lib/types";
 import { formatRs } from "@/lib/money";
 import { formatClock, formatDuration } from "@/lib/time";
@@ -22,6 +22,7 @@ import { ItemPhoto } from "@/components/ItemPhoto";
 import { ItemModal, type AddSelection } from "./ItemModal";
 import { CustomerCorner } from "./CustomerCorner";
 import { LoadingScreen } from "@/components/Loader";
+import { printSilent } from "@/lib/print-client";
 import { addLineItem, deleteLineItem, sendToKitchen } from "../../actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 
@@ -102,14 +103,36 @@ function RoundList({
   );
 }
 
+/** Insert temp line items into the current (unsent) round so they render instantly. */
+function withOptimisticItems(full: OrderFull, items: OrderLineItem[]): OrderFull {
+  const rounds: RoundWithItems[] = full.rounds.map((r) => ({ ...r, order_line_items: [...r.order_line_items] }));
+  let target = [...rounds].reverse().find((r) => !r.sent_to_kitchen_at);
+  if (!target) {
+    target = {
+      id: `temp-round-${Math.random().toString(36).slice(2)}`,
+      order_id: full.order.id,
+      round_number: (rounds.at(-1)?.round_number ?? 0) + 1,
+      sent_to_kitchen_at: null,
+      created_at: new Date().toISOString(),
+      order_line_items: [],
+    };
+    rounds.push(target);
+  }
+  for (const it of items) it.round_id = target.id;
+  target.order_line_items.push(...items);
+  return { ...full, rounds };
+}
+
 export function OrderBuilder({ orderId }: { orderId: string }) {
   const router = useRouter();
   const { prompt, notify } = useConfirm();
   const supaRef = useRef(createClient());
-  const [menu, setMenu] = useState<MenuCategoryWithProducts[]>([]);
+  const [menu, setMenu] = useState<MenuCategoryWithProducts[]>(() => cachedMenu() ?? []);
   const [modifiers, setModifiers] = useState<string[]>([]);
   const [order, setOrder] = useState<OrderFull | null>(null);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(
+    () => cachedMenu()?.find((c) => c.products.length)?.category.id ?? null,
+  );
   const [search, setSearch] = useState("");
   const [modalProduct, setModalProduct] = useState<MenuProduct | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -124,15 +147,16 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
   useEffect(() => {
     const supa = supaRef.current;
+    // Order loads first (fast); menu shows instantly from cache, refreshes in the background.
+    refetchOrder();
     (async () => {
       const [menuData, modsRes] = await Promise.all([
-        fetchMenu(supa, { liveOnly: true }),
+        loadMenu(supa),
         supa.from("menu_item_modifiers").select("label").is("menu_item_id", null).order("sort_order"),
       ]);
       setMenu(menuData);
       setModifiers(((modsRes.data ?? []) as { label: string }[]).map((m) => m.label));
       setActiveCat((prev) => prev ?? menuData.find((c) => c.products.length)?.category.id ?? null);
-      await refetchOrder();
     })();
 
     const channel = supa
@@ -166,52 +190,82 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
 
   async function handleAdd(sel: AddSelection) {
     setModalProduct(null);
-    await addLineItem(orderId, {
-      menuItemId: sel.variant.id,
-      name: sel.variant.name,
-      size: sel.variant.size_label,
-      unitPrice: sel.variant.price,
-      quantity: sel.quantity,
-      note: sel.note || null,
-      modifiers: sel.modifiers,
+
+    // Optimistically show the item(s) immediately, then persist + reconcile.
+    const mkTemp = (
+      menuItemId: string | null,
+      name: string,
+      size: string | null,
+      unitPrice: number,
+      quantity: number,
+      note: string | null,
+      modifiers: string[],
+    ): OrderLineItem => ({
+      id: `temp-${Math.random().toString(36).slice(2)}`,
+      round_id: "",
+      menu_item_id: menuItemId,
+      name_snapshot: name,
+      size_snapshot: size,
+      quantity,
+      unit_price: unitPrice,
+      note,
+      modifiers,
+      is_voided: false,
+      void_reason: null,
+      voided_by: null,
+      voided_at: null,
+      created_at: new Date().toISOString(),
     });
+
+    const temps: OrderLineItem[] = [
+      mkTemp(sel.variant.id, sel.variant.name, sel.variant.size_label, sel.variant.price, sel.quantity, sel.note || null, sel.modifiers),
+    ];
     if (sel.extraTopping && sel.extraTopping.quantity > 0) {
       const t = sel.extraTopping.variant;
-      await addLineItem(orderId, {
-        menuItemId: t.id,
-        name: t.name,
-        size: t.size_label,
-        unitPrice: t.price,
-        quantity: sel.extraTopping.quantity,
-        note: null,
-        modifiers: [],
-      });
+      temps.push(mkTemp(t.id, t.name, t.size_label, t.price, sel.extraTopping.quantity, null, []));
     }
-    await refetchOrder();
+    setOrder((prev) => (prev ? withOptimisticItems(prev, temps) : prev));
+
+    try {
+      await addLineItem(orderId, {
+        menuItemId: sel.variant.id,
+        name: sel.variant.name,
+        size: sel.variant.size_label,
+        unitPrice: sel.variant.price,
+        quantity: sel.quantity,
+        note: sel.note || null,
+        modifiers: sel.modifiers,
+      });
+      if (sel.extraTopping && sel.extraTopping.quantity > 0) {
+        const t = sel.extraTopping.variant;
+        await addLineItem(orderId, {
+          menuItemId: t.id,
+          name: t.name,
+          size: t.size_label,
+          unitPrice: t.price,
+          quantity: sel.extraTopping.quantity,
+          note: null,
+          modifiers: [],
+        });
+      }
+    } finally {
+      await refetchOrder();
+    }
   }
   const removeItem = useCallback(async (id: string) => { await deleteLineItem(id); await refetchOrder(); }, [refetchOrder]);
 
   async function handleSend() {
-    // Open a single print window synchronously inside the click handler to avoid popup blocking.
-    const printWin = window.open("about:blank", "_blank");
-
     setSending(true);
     setBanner(null);
     try {
       const res = await sendToKitchen(orderId);
       if (!res.ok) {
-        printWin?.close();
         setBanner(res.error);
         return;
       }
-      // Round 1 prints kitchen slip + bill slip. Round 2+ only prints kitchen slip.
-      if (printWin) {
-        if (res.roundNumber > 1) {
-          printWin.location.href = `/api/print/kitchen/${res.roundId}/html`;
-        } else {
-          printWin.location.href = `/api/print/round/${res.roundId}/html`;
-        }
-      }
+      // Round 1 prints kitchen slip + bill slip; round 2+ only the kitchen slip.
+      // Printed silently via a hidden iframe — no visible tab.
+      printSilent(res.roundNumber > 1 ? `/api/print/kitchen/${res.roundId}/html` : `/api/print/round/${res.roundId}/html`);
 
       await refetchOrder();
       setCartOpen(false);

@@ -10,6 +10,7 @@ import { OffTableOrders } from "./OffTableOrders";
 import { cn } from "@/components/ui";
 import { useConfirm } from "@/components/Confirm";
 import { LoadingScreen } from "@/components/Loader";
+import { loadMenu } from "@/lib/menu-cache";
 
 export default function CounterHomePage() {
   const { confirm, notify } = useConfirm();
@@ -33,6 +34,8 @@ export default function CounterHomePage() {
     setMounted(true);
     refetch();
     const supa = supaRef.current;
+    // Warm the menu cache so the first order builder opens instantly.
+    loadMenu(supa).catch(() => {});
     const channel = supa
       .channel("counter-grid")
       .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_tables" }, refetch)

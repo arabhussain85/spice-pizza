@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getShiftStatus, openShift, closeShift, type ShiftStatus } from "./shift-actions";
 import { useConfirm } from "@/components/Confirm";
+import { printSilent } from "@/lib/print-client";
 
 
 
@@ -49,8 +50,8 @@ export function ShopControl() {
         await notify({ title: "Can't close yet", message: res.error, danger: true });
         return;
       }
-      // HTML route has @page { size: 80mm auto } — no infinite roll, no paper-size dialog
-      window.open(`/api/print/zreport/${res.shiftId}/html`, "_blank");
+      // Printed silently via a hidden iframe (no visible tab); @page 80mm auto.
+      printSilent(`/api/print/zreport/${res.shiftId}/html`);
       await refresh();
     } finally {
       setBusy(false);
