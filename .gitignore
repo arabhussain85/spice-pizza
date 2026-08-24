@@ -10,6 +10,10 @@ node_modules/
 **/.env.*
 !**/.env.example
 supabase-terms.txt
+# Bites Pizza credentials (Supabase keys etc.) — keep out of git
+bites-pizza.txt
+bites-pizza/*.txt
+bites-pizza/*.env
 
 # next
 .next/
