@@ -3,7 +3,7 @@ import { LOGO_PNG_BASE64, LOGO_W, LOGO_H } from "./logo-data";
 
 // Draw the logo rotated a few degrees clockwise (to straighten the mark), pivoting
 // around its centre so the placement stays put. cx = horizontal centre, topY = top edge.
-const LOGO_TILT_DEG = -7; // negative = clockwise in pdf-lib
+const LOGO_TILT_DEG = 0; // Bites logo is already upright
 function drawLogo(page: PDFPage, img: PDFImage, cx: number, topY: number, w: number, h: number) {
   const rad = (LOGO_TILT_DEG * Math.PI) / 180;
   const cos = Math.cos(rad);
