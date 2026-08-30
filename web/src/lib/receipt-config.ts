@@ -15,7 +15,7 @@ export interface ReceiptConfig {
 }
 
 export const RECEIPT_DEFAULTS: ReceiptConfig = {
-  brand: "Spice Pizza",
+  brand: "Bites Pizza",
   tagline: "Authentic Wood-Fired & Special Pizzas",
   address: "Shop #4, Food Street, Main Boulevard, Lahore",
   phone: "+92 300 1234567",

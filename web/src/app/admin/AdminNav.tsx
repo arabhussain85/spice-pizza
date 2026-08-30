@@ -40,7 +40,7 @@ export function AdminNav() {
               <Logo size={36} />
               <div>
                 <span className="font-black tracking-tight text-[#af101a] text-lg group-hover:text-[#8b0d14] transition-colors">
-                  Spice Pizza Admin
+                  Bites Pizza Admin
                 </span>
                 <span className="ml-2 rounded-full bg-[#ffe9e7] px-2 py-0.5 text-[10px] font-bold text-[#af101a] uppercase tracking-wider border border-[#e4beba]">
                   Main Branch

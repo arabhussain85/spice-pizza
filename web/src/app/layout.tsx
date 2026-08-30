@@ -18,8 +18,8 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Spice Pizza",
-  description: "Spice Pizza — counter & admin order management",
+  title: "Bites Pizza",
+  description: "Bites Pizza — counter & admin order management",
 };
 
 export default function RootLayout({

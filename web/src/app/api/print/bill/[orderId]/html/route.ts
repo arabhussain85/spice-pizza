@@ -264,7 +264,7 @@ html, body {
 </div>
 
 <div class="header-wrap">
-  <p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
+  <p class="brand">${e(cfg.brand || "BITES PIZZA")}</p>
   ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
   ${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
   ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
@@ -331,7 +331,7 @@ ${wifiBlock}
 <div class="footer">
   ${cfg.footer ? `<p>${e(cfg.footer)}</p>` : ""}
   <p class="thanks">** THANK YOU FOR VISITING! **</p>
-  <p>${e(cfg.brand || "SPICE PIZZA")}</p>
+  <p>${e(cfg.brand || "BITES PIZZA")}</p>
   <br>
 </div>
 

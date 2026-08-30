@@ -58,7 +58,7 @@ export default function CounterHomePage() {
       {/* ── Top Nav ─────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-30 h-[56px] flex items-center justify-between px-6 md:px-10 bg-[#fff8f7] border-b border-[#e4beba] shadow-sm">
         <div className="text-xl font-bold text-[#af101a]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          Spice Pizza · Counter
+          Bites Pizza · Counter
         </div>
         <div className="flex items-center gap-3">
           {rows && (

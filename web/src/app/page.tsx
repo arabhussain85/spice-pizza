@@ -8,7 +8,7 @@ export default function Home() {
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand text-2xl font-bold text-white shadow-sm">
             S
           </div>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">Spice Pizza</h1>
+          <h1 className="mt-4 text-2xl font-bold tracking-tight">Bites Pizza</h1>
           <p className="mt-1 text-sm text-muted">Best food in town — order management</p>
         </div>
 

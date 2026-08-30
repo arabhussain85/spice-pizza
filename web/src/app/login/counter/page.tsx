@@ -87,7 +87,7 @@ export default function CounterPinLoginPage() {
           >
             🍕
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Spice Pizza</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Bites Pizza</h1>
           <p className="text-sm mt-1" style={{ color: "#8f6f6c" }}>Counter Terminal</p>
         </div>
 
@@ -170,7 +170,7 @@ export default function CounterPinLoginPage() {
         </div>
 
         <p className="text-[11px] mt-10" style={{ color: "rgba(255,255,255,0.2)" }}>
-          Spice Pizza POS · Staff Access Only
+          Bites Pizza POS · Staff Access Only
         </p>
       </div>
 

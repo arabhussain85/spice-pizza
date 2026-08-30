@@ -319,7 +319,7 @@ export async function renderKitchen(slip: KitchenSlip): Promise<Uint8Array> {
     y -= 14;
   }
   d.dashed(y); y -= 16;
-  d.center("*** SPICE PIZZA KITCHEN ***", y, 9, bold, INK); y -= 12;
+  d.center("*** BITES PIZZA KITCHEN ***", y, 9, bold, INK); y -= 12;
   d.center("End of Order", y, 8, font, MUTED);
 
   return doc.save();

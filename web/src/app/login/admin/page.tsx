@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-white">Admin Panel</h1>
-              <p className="text-sm text-red-200 mt-0.5">Spice Pizza · Main Branch</p>
+              <p className="text-sm text-red-200 mt-0.5">Bites Pizza · Main Branch</p>
             </div>
           </div>
 

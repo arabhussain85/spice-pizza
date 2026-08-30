@@ -117,7 +117,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ shiftId
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Z-Report — ${e(cfg.brand || "Spice Pizza")}</title>
+<title>Z-Report — ${e(cfg.brand || "Bites Pizza")}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -222,7 +222,7 @@ html, body {
   <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
 </div>
 
-<p class="brand">${e(cfg.brand || "SPICE PIZZA")}</p>
+<p class="brand">${e(cfg.brand || "BITES PIZZA")}</p>
 ${cfg.address ? `<p class="sub">${e(cfg.address)}</p>` : ""}
 <div class="z-title">Z-REPORT</div>
 
