@@ -15,6 +15,8 @@ const tabs = [
 
 const more = [
   { href: "/admin/orders", label: "Order History", icon: "receipt_long" },
+  { href: "/admin/expenses", label: "Expenses", icon: "account_balance" },
+  { href: "/admin/udhaar", label: "Udhaar (Credit)", icon: "account_balance_wallet" },
   { href: "/admin/discounts", label: "Discounts & Fees", icon: "local_offer" },
   { href: "/admin/payments", label: "Payment Approvals", icon: "payments" },
   { href: "/admin/settings/receipt", label: "Receipt Customizer", icon: "receipt" },
@@ -101,6 +103,26 @@ export function AdminNav() {
               >
                 <Icon name="print" className="text-base" />
                 <span>Printer</span>
+              </Link>
+              <Link
+                href="/admin/udhaar"
+                className={cn(
+                  "flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all",
+                  isActive("/admin/udhaar") ? "bg-[#af101a] text-white font-bold" : "text-[#605e5b] hover:text-[#1A1A1A] hover:bg-[#ffe9e7]"
+                )}
+              >
+                <Icon name="account_balance_wallet" className="text-base" />
+                <span>Udhaar</span>
+              </Link>
+              <Link
+                href="/admin/expenses"
+                className={cn(
+                  "flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all",
+                  isActive("/admin/expenses") ? "bg-[#af101a] text-white font-bold" : "text-[#605e5b] hover:text-[#1A1A1A] hover:bg-[#ffe9e7]"
+                )}
+              >
+                <Icon name="account_balance" className="text-base" />
+                <span>Expenses</span>
               </Link>
               <Link
                 href="/admin/settings"

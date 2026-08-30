@@ -271,6 +271,7 @@ interface PaymentInput {
   amount: number;
   tendered?: number | null;
   screenshotUrl?: string | null;
+  customer?: { name: string; phone?: string | null } | null;
 }
 
 export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
@@ -291,6 +292,20 @@ export async function closeAndPay(orderId: string, payments: PaymentInput[]) {
   });
   const { error: pe } = await supa.from("payments").insert(rows);
   if (pe) throw new Error(pe.message);
+
+  // Udhaar (credit): add a charge to the customer's ledger so they owe it.
+  for (const p of payments) {
+    if (p.method === "udhaar" && p.customer?.name) {
+      await supa.from("credit_ledger").insert({
+        customer_name: p.customer.name.trim(),
+        customer_phone: p.customer.phone?.trim() || null,
+        order_id: orderId,
+        amount: p.amount,
+        kind: "charge",
+        note: "Order on credit",
+      });
+    }
+  }
 
   if (hasPending) {
     // Keep order open in pending_payment state until owner approves in Admin panel

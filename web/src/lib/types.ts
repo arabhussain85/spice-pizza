@@ -5,7 +5,7 @@ export type TableStatus = "free" | "occupied";
 export type OrderStatus = "open" | "closed" | "void";
 export type OrderType = "dine_in" | "takeaway" | "delivery";
 export type DiscountType = "percent" | "fixed";
-export type PaymentMethod = "cash" | "card" | "jazzcash" | "easypaisa" | "other";
+export type PaymentMethod = "cash" | "card" | "jazzcash" | "easypaisa" | "udhaar" | "other";
 export type PaymentStatus = "pending" | "confirmed";
 
 export interface Staff {
