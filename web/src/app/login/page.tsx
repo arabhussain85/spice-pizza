@@ -22,7 +22,7 @@ export default function LoginRoleSelectorPage() {
         <div className="text-center mb-10">
           <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/spice-logo.png" alt="Bites Pizza" className="w-full h-full object-contain drop-shadow-sm" />
+            <img src="/bites-logo.png" alt="Bites Pizza" className="w-full h-full object-contain drop-shadow-sm" />
           </div>
           <h1
             className="text-3xl font-black tracking-tight"

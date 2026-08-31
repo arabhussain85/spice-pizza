@@ -5,7 +5,7 @@ import { fetchMenu, type MenuCategoryWithProducts } from "./queries";
 // sessionStorage (survives reloads). This makes the order builder show the menu
 // instantly instead of waiting on a round-trip to the (possibly far) database.
 
-const KEY = "spice_menu_v1";
+const KEY = "bites_menu_v1";
 let cache: MenuCategoryWithProducts[] | null = null;
 let inflight: Promise<MenuCategoryWithProducts[]> | null = null;
 

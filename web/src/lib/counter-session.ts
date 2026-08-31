@@ -8,7 +8,7 @@
 const SECRET =
   process.env.COUNTER_SECRET ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "spice-pizza-counter-dev-secret-change-me";
+  "bites-pizza-counter-dev-secret-change-me";
 
 const TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 

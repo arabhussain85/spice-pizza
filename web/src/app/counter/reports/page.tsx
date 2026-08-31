@@ -58,7 +58,7 @@ export default function CounterReportsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `spice_pizza_report_${from}_to_${to}.csv`);
+    link.setAttribute("download", `bites_pizza_report_${from}_to_${to}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

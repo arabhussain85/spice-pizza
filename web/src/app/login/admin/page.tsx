@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="owner@spicepizza.local"
+                    placeholder="owner@bitespizza.com"
                     autoComplete="username"
                     required
                     className="w-full h-12 px-4 rounded-xl border-2 outline-none text-sm transition-all"
@@ -206,7 +206,7 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setEmail("owner@spicepizza.local");
+                    setEmail("owner@bitespizza.com");
                     setPassword("owner1234");
                   }}
                   className="w-full text-left rounded-xl border px-4 py-2.5 hover:bg-[#fff0ef] transition-colors"
@@ -216,7 +216,7 @@ export default function AdminLoginPage() {
                     Owner Account
                   </div>
                   <div className="text-[10px]" style={{ color: "#605e5b" }}>
-                    owner@spicepizza.local
+                    owner@bitespizza.com
                   </div>
                 </button>
               </div>

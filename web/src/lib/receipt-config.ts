@@ -21,7 +21,7 @@ export const RECEIPT_DEFAULTS: ReceiptConfig = {
   phone: "+92 300 1234567",
   ntn: "NTN: 7654321-9",
   footer: "Thank you for dining with us! Please visit again.",
-  wifiSsid: "SpicePizza_Guest",
+  wifiSsid: "BitesPizza_Guest",
   wifiPass: "pizza123",
   showWifi: true,
   showService: true,

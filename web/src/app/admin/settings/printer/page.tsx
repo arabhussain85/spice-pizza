@@ -47,7 +47,7 @@ export default function PrinterSettingsPage() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("spice_pizza_printer_config");
+      const stored = localStorage.getItem("bites_pizza_printer_config");
       if (stored) setCfg({ ...DEFAULT_PRINTER_CFG, ...JSON.parse(stored) });
     } catch (e) {
       console.warn("Failed to load printer settings:", e);
@@ -68,7 +68,7 @@ export default function PrinterSettingsPage() {
 
   const saveSettings = () => {
     try {
-      localStorage.setItem("spice_pizza_printer_config", JSON.stringify(cfg));
+      localStorage.setItem("bites_pizza_printer_config", JSON.stringify(cfg));
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
