@@ -201,30 +201,46 @@ function MenuItemSheet({
 }) {
   const { confirm } = useConfirm();
   const [name, setName] = useState(item.name ?? "");
-  const [price, setPrice] = useState(item.price != null ? String(item.price) : "");
   const [categoryId, setCategoryId] = useState(item.category_id ?? cats[0]?.id ?? "");
-  const [size, setSize] = useState(item.size_label ?? "");
+  const [sizes, setSizes] = useState<{ size: string; price: string }[]>(
+    item.id
+      ? [{ size: item.size_label ?? "", price: item.price != null ? String(item.price) : "" }]
+      : [{ size: "", price: "" }],
+  );
   const [description, setDescription] = useState(item.description ?? "");
   const [live, setLive] = useState(item.is_live ?? true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const isEdit = !!item.id;
+  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const hasPrice = sizes.some((s) => Number(s.price) > 0);
 
   async function save() {
     setBusy(true);
     setErr(null);
     try {
-      await upsertMenuItem({
-        id: item.id,
-        category_id: categoryId,
-        name: name.trim(),
-        price: Number(price),
-        size_label: size.trim() || null,
-        description: description.trim() || null,
-        photo_url: item.photo_url ?? null,
-        is_live: live,
-        group_key: item.group_key ?? null,
-      });
+      const rows = sizes.map((s) => ({ size: s.size.trim(), price: Number(s.price) })).filter((s) => s.price > 0);
+      if (rows.length === 0) { setErr("Add at least one price."); setBusy(false); return; }
+
+      if (isEdit) {
+        await upsertMenuItem({
+          id: item.id, category_id: categoryId, name: name.trim(),
+          price: rows[0].price, size_label: rows[0].size || null,
+          description: description.trim() || null, photo_url: item.photo_url ?? null,
+          is_live: live, group_key: item.group_key ?? null,
+        });
+      } else {
+        // multiple sizes → one product (shared group_key); single row → plain item
+        const gk = rows.length > 1 ? slug(name.trim()) : null;
+        for (const r of rows) {
+          await upsertMenuItem({
+            category_id: categoryId, name: name.trim(),
+            price: r.price, size_label: r.size || null,
+            description: description.trim() || null, photo_url: null,
+            is_live: live, group_key: gk,
+          });
+        }
+      }
       await onSaved();
     } catch (e) {
       setErr((e as Error).message);
@@ -246,21 +262,45 @@ function MenuItemSheet({
           className="mt-4 w-full rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
         />
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="Rs. price"
-            className="rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
-          />
-          <input
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-            placeholder="Size (optional)"
-            className="rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
-          />
+        <div className="mt-3 space-y-2">
+          <label className="block text-xs font-semibold text-ink-muted">
+            {isEdit ? "Size & price" : "Sizes & prices"}
+          </label>
+          {sizes.map((s, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                value={s.size}
+                onChange={(e) => setSizes((rows) => rows.map((r, j) => (j === i ? { ...r, size: e.target.value } : r)))}
+                placeholder={sizes.length > 1 ? "Size (e.g. Large)" : "Size (optional)"}
+                className="flex-1 rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm outline-none focus:border-brand/50"
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                value={s.price}
+                onChange={(e) => setSizes((rows) => rows.map((r, j) => (j === i ? { ...r, price: e.target.value } : r)))}
+                placeholder="Rs."
+                className="w-24 rounded-xl border border-hairline bg-cream/50 px-3 py-2 text-sm font-bold outline-none focus:border-brand/50"
+              />
+              {!isEdit && sizes.length > 1 && (
+                <button
+                  onClick={() => setSizes((rows) => rows.filter((_, j) => j !== i))}
+                  className="grid w-9 shrink-0 place-items-center rounded-xl border border-hairline text-muted hover:text-brand"
+                  aria-label="remove size"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+                </button>
+              )}
+            </div>
+          ))}
+          {!isEdit && (
+            <button
+              onClick={() => setSizes((rows) => [...rows, { size: "", price: "" }])}
+              className="text-xs font-bold text-brand hover:underline"
+            >
+              + Add another size
+            </button>
+          )}
         </div>
 
         <select
@@ -329,7 +369,7 @@ function MenuItemSheet({
           <Button variant="outline" className="flex-1" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" className="flex-1" disabled={busy || !name || !price || !categoryId} onClick={save}>
+          <Button variant="primary" className="flex-1" disabled={busy || !name || !hasPrice || !categoryId} onClick={save}>
             {busy ? "Saving…" : "Save item"}
           </Button>
         </div>
