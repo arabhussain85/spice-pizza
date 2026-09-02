@@ -390,7 +390,7 @@ export function BillView({ orderId }: { orderId: string }) {
           <div className="text-center text-xs text-[#605e5b] mt-2 space-y-1">
             {cfg.footer && <p className="italic">{cfg.footer}</p>}
             <p className="font-bold text-[#271816] uppercase">** THANK YOU FOR VISITING! **</p>
-            <p className="text-[10px] text-[#8c7471] tracking-widest uppercase">*** POWERED BY {cfg.brand || "BITES PIZZA"} ***</p>
+            <p className="text-[10px] text-[#8c7471] tracking-widest uppercase">*** POWERED BY {cfg.brand || "PIZZA BITES"} ***</p>
           </div>
         </div>
 

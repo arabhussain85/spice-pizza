@@ -23,13 +23,13 @@ export interface ReceiptCustomConfig {
 }
 
 const DEFAULT_CONFIG: ReceiptCustomConfig = {
-  restaurantName: "BITES PIZZA",
+  restaurantName: "PIZZA BITES",
   tagline: "Authentic Wood-Fired & Special Pizzas",
   address: "Shop #4, Food Street, Main Boulevard, Lahore",
   phone: "+92 300 1234567",
   ntnNumber: "NTN: 7654321-9",
   footerNote: "Thank you for dining with us! Please visit again.",
-  wifiSsid: "BitesPizza_Guest",
+  wifiSsid: "PizzaBites_Guest",
   wifiPass: "pizza123",
   showTaxBreakdown: true,
   showWifiInfo: true,
@@ -261,7 +261,7 @@ export default function ReceiptCustomizerPage() {
 
             {/* Header */}
             <div className="text-center pb-3 border-b border-dashed border-gray-400 space-y-1">
-              <h3 className="font-extrabold text-lg uppercase tracking-tight text-black">{cfg.restaurantName || "BITES PIZZA"}</h3>
+              <h3 className="font-extrabold text-lg uppercase tracking-tight text-black">{cfg.restaurantName || "PIZZA BITES"}</h3>
               {cfg.tagline && <p className="text-xs text-gray-600 italic">{cfg.tagline}</p>}
               <p className="text-xs text-gray-700 leading-tight">{cfg.address}</p>
               <p className="text-xs font-semibold text-gray-800">Tel: {cfg.phone}</p>
@@ -341,7 +341,7 @@ export default function ReceiptCustomizerPage() {
             <div className="pt-3 text-center text-xs text-gray-600 leading-tight space-y-1">
               <p className="font-medium italic">{cfg.footerNote}</p>
               <div className="pt-1 text-[10px] text-gray-400 uppercase tracking-widest font-mono">
-                *** POWERED BY BITES PIZZA ***
+                *** POWERED BY PIZZA BITES ***
               </div>
             </div>
           </div>

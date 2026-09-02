@@ -28,7 +28,7 @@ export function LoadingScreen({ label = "Loading…" }: { label?: string }) {
         </span>
       </div>
       <div className="text-center">
-        <div className="text-sm font-bold tracking-tight text-[#af101a]">Bites Pizza</div>
+        <div className="text-sm font-bold tracking-tight text-[#af101a]">Pizza Bites</div>
         <div className="mt-0.5 text-xs font-semibold text-[#605e5b]" aria-live="polite">{label}</div>
       </div>
     </div>

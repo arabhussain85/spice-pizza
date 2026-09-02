@@ -482,7 +482,7 @@ export default function PrinterSettingsPage() {
                 <>
                   <div>[CODE PAGE] PC437 \x1B\x74\x00</div>
                   <div>[JUSTIFY CENTER] \x1B\x61\x01</div>
-                  <div>[BOLD ON] \x1B\x45\x01 BITES PIZZA</div>
+                  <div>[BOLD ON] \x1B\x45\x01 PIZZA BITES</div>
                   <div>[FEED & CUT] \x1D\x56\x42\x00</div>
                 </>
               )}

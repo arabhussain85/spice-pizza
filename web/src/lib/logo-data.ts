@@ -1,4 +1,4 @@
-// Bites Pizza logo (chef mascot + PIZZA BITES), extracted from the flyer.
+// Pizza Bites logo (chef mascot + PIZZA BITES), extracted from the flyer.
 export const LOGO_W = 162;
 export const LOGO_H = 200;
 export const LOGO_PNG_BASE64 =

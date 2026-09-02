@@ -15,7 +15,7 @@ export function Logo({ size = 40, className }: { size?: number; className?: stri
       )}
       style={{ width: size, height: size, fontSize: Math.max(14, size * 0.45) }}
     >
-      B
+      P
     </div>
   );
 }

@@ -22,13 +22,13 @@ export default function LoginRoleSelectorPage() {
         <div className="text-center mb-10">
           <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/bites-logo.png" alt="Bites Pizza" className="w-full h-full object-contain drop-shadow-sm" />
+            <img src="/bites-logo.png" alt="Pizza Bites" className="w-full h-full object-contain drop-shadow-sm" />
           </div>
           <h1
             className="text-3xl font-black tracking-tight"
             style={{ color: "#1A1A1A", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Bites Pizza
+            Pizza Bites
           </h1>
           <p className="text-sm mt-1" style={{ color: "#605e5b" }}>
             Order Management &amp; POS System
@@ -131,7 +131,7 @@ export default function LoginRoleSelectorPage() {
         </div>
 
         <p className="text-center text-[11px] mt-8" style={{ color: "#8f6f6c" }}>
-          Bites Pizza POS System · Main Branch
+          Pizza Bites POS System · Main Branch
         </p>
       </div>
     </main>

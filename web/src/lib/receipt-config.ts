@@ -15,13 +15,13 @@ export interface ReceiptConfig {
 }
 
 export const RECEIPT_DEFAULTS: ReceiptConfig = {
-  brand: "Bites Pizza",
+  brand: "Pizza Bites",
   tagline: "Authentic Wood-Fired & Special Pizzas",
   address: "Shop #4, Food Street, Main Boulevard, Lahore",
   phone: "+92 300 1234567",
   ntn: "NTN: 7654321-9",
   footer: "Thank you for dining with us! Please visit again.",
-  wifiSsid: "BitesPizza_Guest",
+  wifiSsid: "PizzaBites_Guest",
   wifiPass: "pizza123",
   showWifi: true,
   showService: true,

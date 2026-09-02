@@ -337,7 +337,7 @@ html, body {
     <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
   </div>
 
-  <p class="brand">${e(cfg.brand || "BITES PIZZA")}</p>
+  <p class="brand">${e(cfg.brand || "PIZZA BITES")}</p>
   <p class="kitchen-title">KITCHEN ORDER</p>
   <hr class="sep-solid">
 
@@ -396,7 +396,7 @@ html, body {
   </div>
 
   <div class="header-wrap">
-    <p class="brand">${e(cfg.brand || "BITES PIZZA")}</p>
+    <p class="brand">${e(cfg.brand || "PIZZA BITES")}</p>
     ${cfg.tagline ? `<p class="hsub">${e(cfg.tagline)}</p>` : ""}
     ${cfg.address ? `<p class="hsub">${e(cfg.address)}</p>` : ""}
     ${cfg.phone   ? `<p class="hsub">Tel: ${e(cfg.phone)}</p>` : ""}
@@ -469,7 +469,7 @@ html, body {
   <div class="footer" style="page-break-after: avoid; break-after: avoid;">
     ${cfg.footer ? `<p>${e(cfg.footer)}</p>` : ""}
     <p class="thanks">** THANK YOU FOR VISITING! **</p>
-    <p>${e(cfg.brand || "BITES PIZZA")}</p>
+    <p>${e(cfg.brand || "PIZZA BITES")}</p>
     <br>
   </div>
 </div>

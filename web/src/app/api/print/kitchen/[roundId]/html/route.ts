@@ -189,7 +189,7 @@ html, body {
     <img class="logo-img" src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Logo" />
   </div>
 
-  <p class="brand">${e(cfg.brand || "BITES PIZZA")}</p>
+  <p class="brand">${e(cfg.brand || "PIZZA BITES")}</p>
   <p class="kitchen-title">KITCHEN ORDER</p>
   <hr class="sep-solid">
 

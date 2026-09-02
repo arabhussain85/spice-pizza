@@ -62,7 +62,7 @@ export default function AdminTodayPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Avatar name="Bites Pizza" size={42} />
+          <Avatar name="Pizza Bites" size={42} />
         </div>
       </div>
 
