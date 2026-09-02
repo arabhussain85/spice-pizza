@@ -6,6 +6,7 @@ import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promoti
 import { fetchReceiptConfig } from "@/lib/receipt-config";
 import type { OrderLineItem } from "@/lib/types";
 import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
+import { QR_PNG_BASE64 } from "@/lib/qr-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -319,6 +320,10 @@ html, body {
 .pay .p-val { text-align: right; white-space: nowrap; font-weight: 600; }
 .pay .p-chg { text-align: right; font-size: 10pt; font-weight: 700; white-space: nowrap; }
 
+.qr     { text-align:center; margin:8px 0; }
+.qr img { width:150px; height:150px; image-rendering:pixelated; }
+.qrcap  { font-size:8pt; font-weight:700; margin-top:2px; color:#000; }
+.type-box { text-align:center; font-size:16pt; font-weight:800; letter-spacing:1px; margin:6px 0 4px; text-transform:uppercase; }
 .wifi   { font-size:8pt; font-weight:700; text-align:center; margin:6px 0; color:#000; }
 .footer { text-align:center; font-size:8.5pt; line-height:1.6; margin-top:8px; color:#000; font-weight:600; }
 .thanks { font-size:9pt; font-weight:700; letter-spacing:0.5px; margin-top:4px; }
@@ -398,6 +403,7 @@ html, body {
     ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
   </div>
 
+  ${ot !== "dine_in" ? `<div class="type-box">${e(tableLabel)}</div>` : ""}
   ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order.token_number}</div>` : ""}
 
   <table class="meta">
@@ -452,6 +458,11 @@ html, body {
 
   ${cashPay ? `<table class="pay">${payRows}</table>` : ""}
 
+  <hr class="sep-dash">
+  <div class="qr">
+    <img src="data:image/png;base64,${QR_PNG_BASE64}" alt="JazzCash QR" />
+    <p class="qrcap">Scan to Pay &mdash; JazzCash</p>
+  </div>
   <hr class="sep-dash">
   ${wifiBlock}
 
