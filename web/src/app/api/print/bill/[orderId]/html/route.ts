@@ -6,7 +6,6 @@ import { fetchActivePromotions, fetchMenuMeta, promoTotals } from "@/lib/promoti
 import { fetchReceiptConfig } from "@/lib/receipt-config";
 import type { OrderLineItem } from "@/lib/types";
 import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
-import { QR_PNG_BASE64 } from "@/lib/qr-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -338,11 +337,6 @@ ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order
 
 ${cashPay ? `<table class="pay">${payRows}</table>` : ""}
 
-<hr class="sep-dash">
-<div class="qr">
-  <img src="data:image/png;base64,${QR_PNG_BASE64}" alt="JazzCash QR" />
-  <p class="qrcap">Scan to Pay &mdash; JazzCash</p>
-</div>
 <hr class="sep-dash">
 ${wifiBlock}
 
