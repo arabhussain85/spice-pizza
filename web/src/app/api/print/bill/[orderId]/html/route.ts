@@ -252,6 +252,9 @@ html, body {
 .pay .p-chg { text-align: right; font-size: 10pt; font-weight: 700; white-space: nowrap; }
 
 /* ── WiFi / Footer ── */
+.qr     { text-align: center; margin: 8px 0; }
+.qr img { width: 150px; height: 150px; image-rendering: pixelated; }
+.qrcap  { font-size: 8pt; font-weight: 700; margin-top: 2px; color: #000; }
 .wifi   { font-size: 8pt; font-weight: 700; text-align: center; margin: 6px 0; color: #000; }
 .footer { text-align: center; font-size: 8.5pt; line-height: 1.6; margin-top: 8px; color: #000; font-weight: 600; }
 .thanks { font-size: 9pt; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; }
@@ -325,6 +328,11 @@ ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order
 
 ${cashPay ? `<table class="pay">${payRows}</table>` : ""}
 
+<hr class="sep-dash">
+<div class="qr">
+  <img src="/bites-qr.png" alt="JazzCash QR" />
+  <p class="qrcap">Scan to Pay &mdash; JazzCash</p>
+</div>
 <hr class="sep-dash">
 ${wifiBlock}
 

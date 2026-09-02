@@ -81,7 +81,7 @@ export function OffTableOrders() {
           <button
             onClick={() => startNew("takeaway")}
             disabled={starting}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#af101a]/40 bg-white px-3.5 py-2 text-xs font-bold text-[#af101a] transition-all hover:bg-[#ffe9e7] active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#af101a]/40 bg-white px-4 py-2.5 text-sm font-bold text-[#af101a] transition-all hover:bg-[#ffe9e7] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>takeout_dining</span>
             New Takeaway
@@ -89,7 +89,7 @@ export function OffTableOrders() {
           <button
             onClick={() => startNew("delivery")}
             disabled={starting}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#af101a] px-3.5 py-2 text-xs font-bold text-white transition-all hover:bg-[#8b0d14] active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#af101a] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#8b0d14] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delivery_dining</span>
             New Delivery
@@ -112,19 +112,19 @@ export function OffTableOrders() {
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-sm font-extrabold uppercase tracking-wide",
                       o.order_type === "delivery"
                         ? "bg-[#fff0ef] text-[#af101a] border border-[#e4beba]"
                         : "bg-[#fff4e5] text-[#b26a00] border border-[#f0d9b0]",
                     )}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "13px" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
                       {o.order_type === "delivery" ? "delivery_dining" : "takeout_dining"}
                     </span>
                     {o.order_type}{o.type_number != null ? ` #${o.type_number}` : ""}
                   </span>
                   {o.token_number != null && (
-                    <span className="rounded-md bg-[#fff0ef] px-1.5 py-0.5 text-[11px] font-extrabold text-[#af101a]">
+                    <span className="rounded-md bg-[#fff0ef] px-2 py-1 text-sm font-extrabold text-[#af101a]">
                       Token #{o.token_number}
                     </span>
                   )}
@@ -138,7 +138,7 @@ export function OffTableOrders() {
                 </div>
 
                 {(o.customer_name || o.customer_phone) && (
-                  <div className="mt-1.5 text-xs font-semibold text-[#605e5b]">
+                  <div className="mt-1.5 text-base font-bold text-[#1A1A1A]">
                     {[o.customer_name, o.customer_phone].filter(Boolean).join(" · ")}
                   </div>
                 )}

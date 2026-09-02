@@ -84,8 +84,13 @@ function RoundList({
                     {formatRs(li.unit_price * li.quantity)}
                   </div>
                   {!sent && (
-                    <button onClick={() => onRemove(li.id)} className="ml-0.5 text-[#8f6f6c] hover:text-[#af101a]" aria-label="remove">
-                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>
+                    <button
+                      onClick={() => onRemove(li.id)}
+                      className="ml-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#ffe9e7] text-[#af101a] hover:bg-[#af101a] hover:text-white"
+                      aria-label="remove item"
+                      title="Remove item"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
                     </button>
                   )}
                 </div>
