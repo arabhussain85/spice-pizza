@@ -157,7 +157,7 @@ html, body {
   max-width: 120px;
   height: auto;
   filter: grayscale(1) contrast(1.5);
-  transform: rotate(-7deg);
+  transform: rotate(0deg);
 }
 
 /* ── Header ── */
@@ -178,6 +178,14 @@ html, body {
   font-weight: 700;
   padding: 4px;
   margin: 8px 0;
+  text-transform: uppercase;
+}
+.type-box {
+  text-align: center;
+  font-size: 16pt;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 6px 0 4px;
   text-transform: uppercase;
 }
 
@@ -274,6 +282,7 @@ html, body {
   ${cfg.ntn     ? `<p class="hsub">${e(cfg.ntn)}</p>` : ""}
 </div>
 
+${ot !== "dine_in" ? `<div class="type-box">${e(tableLabel)}</div>` : ""}
 ${full.order.token_number != null ? `<div class="token-box">TOKEN # ${full.order.token_number}</div>` : ""}
 
 <table class="meta">

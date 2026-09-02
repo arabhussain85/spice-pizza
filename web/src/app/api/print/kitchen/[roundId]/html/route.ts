@@ -133,7 +133,7 @@ html, body {
   max-width: 120px;
   height: auto;
   filter: grayscale(1) contrast(1.5);
-  transform: rotate(-7deg);
+  transform: rotate(0deg);
 }
 
 .brand        { font-size:13pt; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; text-align:center; margin-bottom:4px; }
