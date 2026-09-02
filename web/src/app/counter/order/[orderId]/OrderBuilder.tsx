@@ -23,7 +23,7 @@ import { ItemModal, type AddSelection } from "./ItemModal";
 import { CustomerCorner } from "./CustomerCorner";
 import { LoadingScreen } from "@/components/Loader";
 import { printSilent } from "@/lib/print-client";
-import { addLineItem, deleteLineItem, sendToKitchen } from "../../actions";
+import { addLineItem, deleteLineItem, sendToKitchen, updateLineItemQuantity } from "../../actions";
 import { cancelOrder } from "@/app/admin/order-actions";
 
 /** Live receipt: every round listed (sent = desaturated, current = editable). */
@@ -31,10 +31,12 @@ function RoundList({
   rounds,
   currentRoundId,
   onRemove,
+  onQty,
 }: {
   rounds: RoundWithItems[];
   currentRoundId: string | null;
   onRemove: (id: string) => void;
+  onQty: (id: string, next: number) => void;
 }) {
   const visible = rounds.filter(
     (r) => (r.order_line_items ?? []).some((li) => !li.is_voided) || r.id === currentRoundId,
@@ -67,10 +69,26 @@ function RoundList({
             </div>
             <div className="space-y-1.5">
               {items.map((li) => (
-                <div key={li.id} className="flex items-start gap-2 rounded-lg border border-[#e4beba] bg-white px-3 py-2 shadow-sm">
-                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded bg-[#ffe9e7] text-[11px] font-bold text-[#af101a]">
-                    {li.quantity}
-                  </span>
+                <div key={li.id} className="flex items-center gap-2 rounded-lg border border-[#e4beba] bg-white px-2.5 py-2 shadow-sm">
+                  {/* qty steppers — editable even after the round is sent */}
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => onQty(li.id, li.quantity - 1)}
+                      disabled={li.quantity <= 1}
+                      className="grid h-6 w-6 place-items-center rounded-full bg-black/5 text-sm font-bold text-[#1A1A1A] hover:bg-black/10 disabled:opacity-40"
+                      aria-label="decrease"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-sm font-bold tabular-nums text-[#af101a]">{li.quantity}</span>
+                    <button
+                      onClick={() => onQty(li.id, li.quantity + 1)}
+                      className="grid h-6 w-6 place-items-center rounded-full bg-black/5 text-sm font-bold text-[#1A1A1A] hover:bg-black/10"
+                      aria-label="increase"
+                    >
+                      +
+                    </button>
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold leading-tight text-[#1A1A1A]">
                       {li.name_snapshot}
@@ -83,11 +101,14 @@ function RoundList({
                   <div className="text-right text-sm font-bold tabular-nums text-[#1A1A1A]">
                     {formatRs(li.unit_price * li.quantity)}
                   </div>
-                  {!sent && (
-                    <button onClick={() => onRemove(li.id)} className="ml-0.5 text-[#8f6f6c] hover:text-[#af101a]" aria-label="remove">
-                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onRemove(li.id)}
+                    className="ml-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#ffe9e7] text-[#af101a] hover:bg-[#af101a] hover:text-white"
+                    aria-label="remove item"
+                    title="Remove item"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+                  </button>
                 </div>
               ))}
               {items.length === 0 && r.id === currentRoundId && (
@@ -253,6 +274,16 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
     }
   }
   const removeItem = useCallback(async (id: string) => { await deleteLineItem(id); await refetchOrder(); }, [refetchOrder]);
+  const changeQty = useCallback(async (id: string, next: number) => {
+    if (next < 1) return;
+    setOrder((prev) =>
+      prev
+        ? { ...prev, rounds: prev.rounds.map((r) => ({ ...r, order_line_items: r.order_line_items.map((x) => (x.id === id ? { ...x, quantity: next } : x)) })) }
+        : prev,
+    );
+    await updateLineItemQuantity(id, next);
+    await refetchOrder();
+  }, [refetchOrder]);
 
   async function handleSend() {
     setSending(true);
@@ -418,7 +449,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <RoundList rounds={rounds} currentRoundId={currentRound?.id ?? null} onRemove={removeItem} />
+            <RoundList rounds={rounds} currentRoundId={currentRound?.id ?? null} onRemove={removeItem} onQty={changeQty} />
           </div>
 
           {banner && (
@@ -471,7 +502,7 @@ export function OrderBuilder({ orderId }: { orderId: string }) {
               <div className="font-bold text-[#1A1A1A]">Live Receipt · {totalItems} items</div>
               <button onClick={() => setCartOpen(false)} className="text-[#605e5b] hover:text-[#af101a]"><span className="material-symbols-outlined" style={{ fontSize: "22px" }}>close</span></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4"><RoundList rounds={rounds} currentRoundId={currentRound?.id ?? null} onRemove={removeItem} /></div>
+            <div className="flex-1 overflow-y-auto p-4"><RoundList rounds={rounds} currentRoundId={currentRound?.id ?? null} onRemove={removeItem} onQty={changeQty} /></div>
             <div className="p-5 border-t border-[#e4beba] bg-white">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-[#605e5b]">Total ({order?.order.service_charge_pct ?? 5}% svc)</span>
